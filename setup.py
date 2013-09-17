@@ -23,18 +23,6 @@ if sys.version_info < (2, 6):
   requests += ', < 0.10.1'
 install_requires = [requests]
 
-# Get simplejson if we don't already have json
-try:
-  importer.import_json()
-except ImportError:
-  install_requires.append('simplejson')
-
-try:
-  import json
-  _json_loaded = hasattr(json, 'loads')
-except ImportError:
-  pass
-
 setup(name='sendhub',
       cmdclass = {'build_py': build_py},
       version=version.VERSION,
