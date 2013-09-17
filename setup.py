@@ -13,8 +13,7 @@ except ImportError:
 
 # Don't import sendhub module here, since deps may not be installed
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'sendhub'))
-import importer
-import version
+from sendhub import version
 
 path, script = os.path.split(sys.argv[0])
 os.chdir(os.path.abspath(path))
