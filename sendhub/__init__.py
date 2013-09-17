@@ -28,21 +28,21 @@ apiBase = 'https://api.sendhub.com'
 apiVersion = None
 
 
-#XXX TEMP
+# #XXX TEMP
 userName = 'sendhub-api'
 password = 'DCWL83VVekEnja'
+# password = 'fgyreigr'
 internalApi = True
 apiBase = 'http://dev.sendhub.com:7000'
 
 
 ## Exceptions
 class SendHubError(Exception):
-    def __init__(self, message=None, httpBody=None, httpStatus=None,
-                 jsonBody=None):
+    def __init__(self, message=None, devMessage=None, code=None, moreInfo=None):
         super(SendHubError, self).__init__(message)
-        self.httpBody = httpBody and httpBody.decode('utf-8')
-        self.httpStatus = httpStatus
-        self.jsonBody = jsonBody
+        self.devMessage = devMessage.decode('utf-8') if devMessage is not None else ''
+        self.code = code if code is not None else -1
+        self.moreInfo = moreInfo.decode('utf-8') if moreInfo is not None else ''
 
 
 class APIError(SendHubError):
@@ -54,26 +54,19 @@ class APIConnectionError(SendHubError):
 
 
 class EntitlementError(SendHubError):
-    def __init__(self, message, param, code, httpBody=None, httpStatus=None,
-                 jsonBody=None):
-        super(EntitlementError, self).__init__(message, httpBody, httpStatus,
-                                               jsonBody)
-        self.param = param
-        self.code = code
-        self.httpBody = httpBody and httpBody.decode('utf-8')
-        self.httpStatus = httpStatus
-        self.jsonBody = jsonBody
+    def __init__(self, message, devMessage=None, code=None, moreInfo=None):
+        super(EntitlementError, self).__init__(message, devMessage, code, moreInfo)
 
 
 class InvalidRequestError(SendHubError):
-    def __init__(self, message, param, httpBody=None, httpStatus=None,
-                 jsonBody=None):
-        super(InvalidRequestError, self).__init__(message, httpBody, httpStatus,
-                                                  jsonBody)
-        self.param = param
+    def __init__(self, message, devMessage=None, code=None, moreInfo=None):
+        super(InvalidRequestError, self).__init__(message, devMessage, code, moreInfo)
 
 
 class AuthenticationError(SendHubError):
+    pass
+
+class AuthorizationError(SendHubError):
     pass
 
 
@@ -170,19 +163,36 @@ class APIRequestor(object):
 
     def handleApiError(self, rbody, rcode, resp):
         try:
-            error = resp['error']
+            # message is required
+            message = resp['message']
         except (KeyError, TypeError):
             raise APIError(
                 "Invalid response object from API: %r (HTTP response code was %d)" % (
-                rbody, rcode), rbody, rcode, resp)
+                rbody, rcode), '', rcode, '')
+
+        if 'devMessage' in resp:
+            devMessage = resp['devMessage']
+        else:
+            devMessage = ''
+
+        if 'code' in resp:
+            code = resp['code']
+        else:
+            code = -1
+
+        if 'moreInfo' in resp:
+            moreInfo = resp['moreInfo']
+        else:
+            moreInfo = ''
 
         if rcode in [400, 404]:
-            raise InvalidRequestError(error.get('message'), error.get('param'),
-                                      rbody, rcode, resp)
+            raise InvalidRequestError(message, devMessage, code, moreInfo)
         elif rcode == 401:
-            raise AuthenticationError(error.get('message'), rbody, rcode, resp)
+            raise AuthenticationError(message, devMessage, code, moreInfo)
+        elif rcode == 403:
+            raise AuthorizationError(message, devMessage, code, moreInfo)
         else:
-            raise APIError(error.get('message'), rbody, rcode, resp)
+            raise APIError(message, devMessage, code, moreInfo)
 
     def performRequest(self, meth, url, params={}):
         """
@@ -244,7 +254,7 @@ class APIRequestor(object):
         except Exception:
             raise APIError(
                 "Invalid response body from API: %s (HTTP response code was %d)" % (
-                rbody, rcode), rbody, rcode)
+                rbody, rcode), '', rcode)
         if not (200 <= rcode < 300):
             self.handleApiError(rbody, rcode, resp)
         return resp
@@ -453,12 +463,16 @@ class Entitlement(APIResource):
         return self
 
     def update(self, userId, action, **params):
-        requestor = APIRequestor()
-        url = self.instanceUrl(str(userId)) + '/' + str(action)
-        response = requestor.request('post', url, params)
-        self.refreshFrom(response)
 
-        self.id = self.uuid
+        try:
+            requestor = APIRequestor()
+            url = self.instanceUrl(str(userId)) + '/' + str(action)
+            response = requestor.request('post', url, params)
+            self.refreshFrom(response)
+
+            self.id = self.uuid
+        except AuthorizationError as e:
+            raise EntitlementError(e.message, e.devMessage, e.code, e.moreInfo)
 
         return self
 
