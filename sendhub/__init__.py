@@ -496,3 +496,11 @@ class Entitlement(APIResource):
         self.refreshFrom(response)
 
         return self
+
+    def resetAll(self, userId, action, **params):
+        requestor = APIRequestor()
+        url = self.instanceUrl(str(userId))
+        response = requestor.request('delete', url)
+        self.refreshFrom(response)
+
+        return self
