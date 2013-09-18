@@ -27,12 +27,6 @@ internalApi = False
 apiBase = 'https://api.sendhub.com'
 apiVersion = None
 
-
-# #XXX TEMP
-userName = 'sendhub-api'
-password = 'DCWL83VVekEnja'
-# password = 'fgyreigr'
-internalApi = True
 apiBase = 'http://dev.sendhub.com:7000'
 
 
@@ -104,9 +98,15 @@ class APIRequestor(object):
         return dttime.strftime('%Y-%m-%dT%H:%M:%S')
 
     @classmethod
+    def encode_list(cls, listvalue):
+        # only supports lists of things that can be represented as strings
+        return ','.join(map(str, listvalue))
+
+    @classmethod
     def _encodeInner(cls, d):
         # special case value encoding
         ENCODERS = {
+            list: cls.encode_list,
             datetime.datetime: cls.encodeDatetime
         }
 
