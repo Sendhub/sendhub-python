@@ -25,9 +25,8 @@ userName = None
 password = None
 internalApi = False
 apiBase = 'https://api.sendhub.com'
+entitlementsBase = 'https://entitlements.sendhub.com'
 apiVersion = None
-
-apiBase = 'http://dev.sendhub.com:7000'
 
 
 ## Exceptions
@@ -82,9 +81,11 @@ def convertToSendhubObject(resp):
 
 ## Network transport
 class APIRequestor(object):
-    @classmethod
-    def apiUrl(cls, url=''):
-        return '%s%s/' % (apiBase, url)
+
+    apiBase = None
+
+    def apiUrl(self, url=''):
+        return '%s%s/' % (self.apiBase if self.apiBase is not None else apiBase, url)
 
     @classmethod
     def _utf8(cls, value):
@@ -423,6 +424,10 @@ class SendHubObjectEncoder(json.JSONEncoder):
 
 
 class APIResource(SendHubObject):
+
+    def getBaseUrl(self):
+        return apiBase
+
     @classmethod
     def className(cls):
         if cls == APIResource:
@@ -447,8 +452,13 @@ class APIResource(SendHubObject):
 
 # API objects
 class Entitlement(APIResource):
+
+    def getBaseUrl(self):
+        return entitlementsBase
+
     def listUsage(self, userId):
         requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId))
         response = requestor.request('get', url)
         self.refreshFrom(response)
@@ -456,6 +466,7 @@ class Entitlement(APIResource):
 
     def check(self, userId, action, **params):
         requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId)) + '/' + str(action)
         response = requestor.request('get', url, params)
         self.refreshFrom(response)
@@ -466,6 +477,7 @@ class Entitlement(APIResource):
 
         try:
             requestor = APIRequestor()
+            requestor.apiBase = self.getBaseUrl()
             url = self.instanceUrl(str(userId)) + '/' + str(action)
             response = requestor.request('post', url, params)
             self.refreshFrom(response)
@@ -481,6 +493,7 @@ class Entitlement(APIResource):
             raise InvalidRequestError('An id(uuid) must be set prior to confirming')
 
         requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(self.userId)) + '/' + str(self.action) + '/' + str(self.id)
         response = requestor.request('post', url)
         self.refreshFrom(response)
@@ -491,6 +504,7 @@ class Entitlement(APIResource):
 
     def reset(self, userId, action, **params):
         requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId)) + '/' + str(action)
         response = requestor.request('delete', url)
         self.refreshFrom(response)
@@ -499,6 +513,7 @@ class Entitlement(APIResource):
 
     def resetAll(self, userId, action, **params):
         requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId))
         response = requestor.request('delete', url)
         self.refreshFrom(response)
