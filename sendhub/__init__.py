@@ -511,7 +511,7 @@ class Entitlement(APIResource):
 
         return self
 
-    def resetAll(self, userId, action, **params):
+    def resetAll(self, userId, **params):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId))
