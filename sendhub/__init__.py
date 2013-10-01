@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # SendHub Python bindings
 
 ## Imports
@@ -11,10 +13,13 @@ import textwrap
 import time
 import datetime
 import types
-import cStringIO as StringIO
 import requests
 from version import VERSION
 import simplejson as json
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import StringIO
 
 _httplib = 'requests'
 
@@ -519,3 +524,4 @@ class Entitlement(APIResource):
         self.refreshFrom(response)
 
         return self
+
