@@ -267,7 +267,7 @@ class APIRequestor(object):
             if params:
                 absUrl = self.buildUrl(absUrl, params)
             data = None
-        elif meth == 'post':
+        elif meth == 'post' or meth == 'patch':
             absUrl = self.buildUrl(absUrl, params, True)
 
             newParams = {}
@@ -535,10 +535,10 @@ class Profile(APIResource):
         self.refreshFrom(response)
         return self
 
-    def update(self, userId, **params):
+    def update(self, userId, data):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId))
-        response = requestor.request('patch', url, params)
+        response = requestor.request('patch', url, data)
 
         return self
