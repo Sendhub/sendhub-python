@@ -26,6 +26,7 @@ password = None
 internalApi = False
 apiBase = 'https://api.sendhub.com'
 entitlementsBase = 'https://entitlements.sendhub.com'
+profileBase = 'https://profile.sendhub.com'
 apiVersion = None
 
 
@@ -517,5 +518,27 @@ class Entitlement(APIResource):
         url = self.instanceUrl(str(userId))
         response = requestor.request('delete', url)
         self.refreshFrom(response)
+
+        return self
+
+# API objects
+class Profile(APIResource):
+
+    def getBaseUrl(self):
+        return profileBase
+
+    def get(self, userId):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(userId))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+        return self
+
+    def update(self, userId, **params):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(userId))
+        response = requestor.request('patch', url, params)
 
         return self
