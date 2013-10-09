@@ -527,7 +527,7 @@ class Profile(APIResource):
     def getBaseUrl(self):
         return profileBase
 
-    def get(self, userId):
+    def fetch(self, userId):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(userId))
