@@ -232,6 +232,7 @@ class APIRequestor(object):
             ua[attr] = val
 
         headers = {
+            'Content-Type': 'application/json',
             'X-SendHub-Client-User-Agent': json.dumps(ua),
             'User-Agent': 'SendHub/v1 PythonBindings/%s' % (VERSION, )
         }
