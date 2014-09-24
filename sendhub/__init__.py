@@ -31,16 +31,20 @@ password = None
 internalApi = False
 apiBase = 'https://api.sendhub.com'
 entitlementsBase = 'https://entitlements.sendhub.com'
+profileBase = 'https://profile.sendhub.com'
 apiVersion = None
 
 
 ## Exceptions
 class SendHubError(Exception):
-    def __init__(self, message=None, devMessage=None, code=None, moreInfo=None):
+    def __init__(
+            self, message=None, devMessage=None, code=None, moreInfo=None):
         super(SendHubError, self).__init__(message)
-        self.devMessage = devMessage.decode('utf-8') if devMessage is not None else ''
+        self.devMessage = devMessage.decode('utf-8') \
+            if devMessage is not None else ''
         self.code = code if code is not None else -1
-        self.moreInfo = moreInfo.decode('utf-8') if moreInfo is not None else ''
+        self.moreInfo = moreInfo.decode('utf-8') \
+            if moreInfo is not None else ''
 
 
 class APIError(SendHubError):
@@ -53,12 +57,14 @@ class APIConnectionError(SendHubError):
 
 class EntitlementError(SendHubError):
     def __init__(self, message, devMessage=None, code=None, moreInfo=None):
-        super(EntitlementError, self).__init__(message, devMessage, code, moreInfo)
+        super(EntitlementError, self).__init__(
+            message, devMessage, code, moreInfo)
 
 
 class InvalidRequestError(SendHubError):
     def __init__(self, message, devMessage=None, code=None, moreInfo=None):
-        super(InvalidRequestError, self).__init__(message, devMessage, code, moreInfo)
+        super(InvalidRequestError, self).__init__(
+            message, devMessage, code, moreInfo)
 
 
 class AuthenticationError(SendHubError):
@@ -90,7 +96,8 @@ class APIRequestor(object):
     apiBase = None
 
     def apiUrl(self, url=''):
-        return '%s%s/' % (self.apiBase if self.apiBase is not None else apiBase, url)
+        return '%s%s/' % \
+               (self.apiBase if self.apiBase is not None else apiBase, url)
 
     @classmethod
     def _utf8(cls, value):
@@ -173,8 +180,8 @@ class APIRequestor(object):
             message = resp['message']
         except (KeyError, TypeError):
             raise APIError(
-                "Invalid response object from API: %r (HTTP response code was %d)" % (
-                rbody, rcode), '', rcode, '')
+                "Invalid response object from API: %r (HTTP response code "
+                "was %d)" % (rbody, rcode), '', rcode, '')
 
         if 'devMessage' in resp:
             devMessage = resp['devMessage']
@@ -242,8 +249,8 @@ class APIRequestor(object):
         rbody, rcode = self.doSendRequest(meth, absUrl, headers, params)
 
         logger.info(
-            'API request to %s returned (response code, response body) of (%d, %r)' % (
-            absUrl, rcode, rbody))
+            'API request to %s returned (response code, response body) '
+            'of (%d, %r)' % (absUrl, rcode, rbody))
 
         return rbody, rcode
 
@@ -260,8 +267,8 @@ class APIRequestor(object):
             resp = json.loads(rbody.decode('utf-8'))
         except Exception:
             raise APIError(
-                "Invalid response body from API: %s (HTTP response code was %d)" % (
-                rbody, rcode), '', rcode)
+                "Invalid response body from API: %s (HTTP response code "
+                "was %d)" % (rbody, rcode), '', rcode)
         if not (200 <= rcode < 300):
             self.handleApiError(rbody, rcode, resp)
         return resp
@@ -285,8 +292,9 @@ class APIRequestor(object):
             data = self.encodeJson(params)
         else:
             raise APIConnectionError(
-                'Unrecognized HTTP method %r.  This may indicate a bug in the SendHub bindings.  Please contact support@sendhub.com for assistance.' % (
-                meth, ))
+                'Unrecognized HTTP method %r.  This may indicate a bug '
+                'in the SendHub bindings.  Please contact support@sendhub.com '
+                'for assistance.' % (meth, ))
 
         kwargs = {}
         try:
@@ -297,8 +305,9 @@ class APIRequestor(object):
                                           **kwargs)
             except TypeError, e:
                 raise TypeError(
-                    'Warning: It looks like your installed version of the "requests" library is not compatible. The underlying error was: %s' % (
-                    e, ))
+                    'Warning: It looks like your installed version of the '
+                    '"requests" library is not compatible. The underlying '
+                    'error was: %s' % (e, ))
 
             content = result.content
             statusCode = result.status_code
@@ -308,10 +317,14 @@ class APIRequestor(object):
 
     def handleRequestError(self, e):
         if isinstance(e, requests.exceptions.RequestException):
-            msg = "Unexpected error communicating with SendHub.  If this problem persists, let us know at support@sendhub.com."
+            msg = "Unexpected error communicating with SendHub.  If this " \
+                  "problem persists, let us know at support@sendhub.com."
             err = "%s: %s" % (type(e).__name__, str(e))
         else:
-            msg = "Unexpected error communicating with SendHub.  It looks like there's probably a configuration issue locally.  If this problem persists, let us know at support@sendhub.com."
+            msg = "Unexpected error communicating with SendHub.  It looks " \
+                  "like there's probably a configuration issue locally.  " \
+                  "If this problem persists, let us know at " \
+                  "support@sendhub.com."
             err = "A %s was raised" % (type(e).__name__, )
             if str(e):
                 err += " with error message %s" % (str(e), )
@@ -434,6 +447,14 @@ class APIResource(SendHubObject):
     def getBaseUrl(self):
         return apiBase
 
+    def get_object(self, user_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(user_id))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+        return self
+
     @classmethod
     def className(cls):
         if cls == APIResource:
@@ -449,8 +470,8 @@ class APIResource(SendHubObject):
         id = self.get('id') if id is None else id
         if not id:
             raise InvalidRequestError(
-                'Could not determine which URL to request: %s instance has invalid ID: %r' % (
-                type(self).__name__, id), 'id')
+                'Could not determine which URL to request: %s instance has '
+                'invalid ID: %r' % (type(self).__name__, id), 'id')
         id = APIRequestor._utf8(id)
         base = self.classUrl()
         extn = urllib.quote_plus(id)
@@ -496,11 +517,13 @@ class Entitlement(APIResource):
 
     def confirmUpdate(self):
         if self.id is None:
-            raise InvalidRequestError('An id(uuid) must be set prior to confirming')
+            raise InvalidRequestError('An id(uuid) must be set prior '
+                                      'to confirming')
 
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = self.instanceUrl(str(self.userId)) + '/' + str(self.action) + '/' + str(self.id)
+        url = self.instanceUrl(str(self.userId)) + '/' + str(self.action) \
+              + '/' + str(self.id)
         response = requestor.request('post', url)
         self.refreshFrom(response)
 
@@ -526,3 +549,15 @@ class Entitlement(APIResource):
 
         return self
 
+class Profile(APIResource):
+
+    def getBaseUrl(self):
+        return profileBase
+
+    def get_user(self, user_id):
+        return self.get_object(user_id)
+
+    @classmethod
+    def classUrl(cls):
+        clsname = cls.className()
+        return "/api/v3/%ss" % clsname
