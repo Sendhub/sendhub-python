@@ -32,6 +32,7 @@ internalApi = False
 apiBase = 'https://api.sendhub.com'
 entitlementsBase = 'https://entitlements.sendhub.com'
 profileBase = 'https://profile.sendhub.com'
+billingBase = 'https://billing.sendhub.com'
 apiVersion = None
 
 
@@ -393,6 +394,7 @@ class SendHubObject(object):
 
 
     def refreshFrom(self, values):
+
         for k, v in values.iteritems():
             self.__dict__[k] = convertToSendhubObject(v)
             self._values.add(k)
@@ -447,13 +449,19 @@ class APIResource(SendHubObject):
     def getBaseUrl(self):
         return apiBase
 
-    def get_object(self, user_id):
+    def get_object(self, obj_id):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = self.instanceUrl(str(user_id))
+        url = self.instanceUrl(str(obj_id))
         response = requestor.request('get', url)
         self.refreshFrom(response)
         return self
+
+    def get_list(self):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        response = requestor.request('get', self.classUrl())
+        return [SendHubObject.constructFrom(i) for i in response]
 
     @classmethod
     def className(cls):
@@ -561,3 +569,28 @@ class Profile(APIResource):
     def classUrl(cls):
         clsname = cls.className()
         return "/api/v3/%ss" % clsname
+
+class BillingAccount(APIResource):
+
+    def getBaseUrl(self):
+        return billingBase
+
+    def get_account(self, enterprise_id):
+        return self.get_object(enterprise_id)
+
+    @classmethod
+    def classUrl(cls):
+        return "/api/v2/accounts"
+
+
+class BillingPlans(APIResource):
+
+    def getBaseUrl(self):
+        return billingBase
+
+    def list_plans(self):
+        return self.get_list()
+
+    @classmethod
+    def classUrl(cls):
+        return "/api/v2/plans"
