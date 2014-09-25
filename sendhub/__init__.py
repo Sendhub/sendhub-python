@@ -557,6 +557,61 @@ class Entitlement(APIResource):
 
         return self
 
+class EntitlementV2(APIResource):
+
+    def getBaseUrl(self):
+        return entitlementsBase
+
+    def listUsage(self, enterprise_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(enterprise_id))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+        return self
+
+    def check(self, enterprise_id, user_id, action, **params):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/{}/{}'.format(
+            self.instanceUrl(str(enterprise_id)), str(user_id), str(action))
+        response = requestor.request('get', url, params)
+        self.refreshFrom(response)
+
+        return self
+
+    def update(self, enterprise_id, user_id, action, **params):
+
+        try:
+            requestor = APIRequestor()
+            requestor.apiBase = self.getBaseUrl()
+            url = '{}/{}/{}'.format(
+                self.instanceUrl(str(enterprise_id)),
+                str(user_id),
+                str(action))
+            response = requestor.request('post', url, params)
+            self.refreshFrom(response)
+
+            self.id = self.uuid
+        except AuthorizationError as e:
+            raise EntitlementError(e.message, e.devMessage, e.code, e.moreInfo)
+
+        return self
+
+    def resetAll(self, enterprise_id, **params):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(enterprise_id))
+        response = requestor.request('delete', url)
+        self.refreshFrom(response)
+
+        return self
+
+    @classmethod
+    def classUrl(cls):
+        clsname = cls.className()
+        return "/api/v2/entitlements" % clsname
+
 class Profile(APIResource):
 
     def getBaseUrl(self):
