@@ -609,8 +609,7 @@ class EntitlementV2(APIResource):
 
     @classmethod
     def classUrl(cls):
-        clsname = cls.className()
-        return "/api/v2/entitlements" % clsname
+        return "/api/v2/entitlements"
 
 class Profile(APIResource):
 
