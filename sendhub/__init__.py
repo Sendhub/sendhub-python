@@ -468,7 +468,7 @@ class APIResource(SendHubObject):
 
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = self.instanceUrl()
+        url = self.classUrl()
         response = requestor.request('post', url, params)
         self.refreshFrom(response)
 
