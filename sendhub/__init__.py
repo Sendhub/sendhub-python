@@ -464,11 +464,11 @@ class APIResource(SendHubObject):
         response = requestor.request('get', self.classUrl())
         return [SendHubObject.constructFrom(i) for i in response]
 
-    def create_object(self, obj_id, **params):
+    def create_object(self, **params):
 
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = self.instanceUrl(str(obj_id))
+        url = self.instanceUrl()
         response = requestor.request('post', url, params)
         self.refreshFrom(response)
 
@@ -645,7 +645,7 @@ class BillingAccount(APIResource):
 
     def create_account(self, enterprise_id, enterprise_name, plan_id, count):
         return self.create_object(
-            obj_id=enterprise_id,
+            accountId=enterprise_id,
             accountName=enterprise_name,
             planId=plan_id,
             count=count)
