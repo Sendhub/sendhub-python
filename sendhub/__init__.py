@@ -645,7 +645,10 @@ class BillingAccount(APIResource):
 
     def create_account(self, enterprise_id, enterprise_name, plan_id, count):
         return self.create_object(
-            enterprise_id, enterprise_name, plan_id, count)
+            obj_id=enterprise_id,
+            accountName=enterprise_name,
+            planId=plan_id,
+            count=count)
 
     @classmethod
     def classUrl(cls):
