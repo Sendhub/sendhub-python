@@ -650,6 +650,15 @@ class BillingAccount(APIResource):
             planId=plan_id,
             count=count)
 
+    def delete_account(self, enterprise_id, **params):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(enterprise_id))
+        response = requestor.request('delete', url)
+        self.refreshFrom(response)
+
+        return self
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/accounts"
