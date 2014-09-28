@@ -659,7 +659,7 @@ class BillingAccount(APIResource):
     def add_user(self, enterprise_id, count=1):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = '{}users'.format(self.instanceUrl(str(enterprise_id)))
+        url = '{}/users'.format(self.instanceUrl(str(enterprise_id)))
         response = requestor.request('post', url, {'count': count})
         self.refreshFrom(response)
 
