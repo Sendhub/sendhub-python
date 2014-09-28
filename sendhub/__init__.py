@@ -660,7 +660,7 @@ class BillingAccount(APIResource):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = '{}users/'.format(self.instanceUrl(str(enterprise_id)))
-        response = requestor.request('post', url, count=count)
+        response = requestor.request('post', url, {'count': count})
         self.refreshFrom(response)
 
         return self
