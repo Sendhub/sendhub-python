@@ -609,7 +609,7 @@ class EntitlementV2(APIResource):
 
         return self
 
-    def resetAll(self, enterprise_id, **params):
+    def reset(self, enterprise_id, **params):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(enterprise_id))
@@ -650,14 +650,26 @@ class BillingAccount(APIResource):
             planId=plan_id,
             count=count)
 
-    def delete_account(self, enterprise_id, **params):
+    def delete_account(self, enterprise_id):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(enterprise_id))
-        response = requestor.request('delete', url)
+        requestor.request('delete', url)
+
+    def add_user(self, enterprise_id, count=1):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}users/'.format(self.instanceUrl(str(enterprise_id)))
+        response = requestor.request('post', url, count=count)
         self.refreshFrom(response)
 
         return self
+
+    def delete_user(self, enterprise_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}users/'.format(self.instanceUrl(str(enterprise_id)))
+        requestor.request('delete', url)
 
     @classmethod
     def classUrl(cls):
