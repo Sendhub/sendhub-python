@@ -573,7 +573,7 @@ class EntitlementV2(APIResource):
     def getBaseUrl(self):
         return entitlementsBase
 
-    def listUsage(self, enterprise_id):
+    def list_usage(self, enterprise_id):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = self.instanceUrl(str(enterprise_id))
