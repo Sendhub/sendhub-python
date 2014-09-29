@@ -684,6 +684,9 @@ class BillingPlans(APIResource):
     def list_plans(self):
         return self.get_list()
 
+    def get_plan(self, plan_id):
+        return self.get_object(plan_id)
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/plans"
