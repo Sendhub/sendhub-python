@@ -455,7 +455,7 @@ class APIResource(SendHubObject):
         url = self.instanceUrl(str(obj_id))
         response = requestor.request('get', url)
         self.refreshFrom(response)
-        self.id = self.enterpriseId
+        self.id = obj_id
         return self
 
     def get_list(self):
