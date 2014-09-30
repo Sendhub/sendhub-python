@@ -671,6 +671,16 @@ class BillingAccount(APIResource):
         url = '{}/users'.format(self.instanceUrl(str(enterprise_id)))
         requestor.request('delete', url)
 
+    def get_payment_data(self, enterprise_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/subscription'.format(
+            self.instanceUrl(str(enterprise_id)))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+
+        return self
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/accounts"
