@@ -581,6 +581,14 @@ class EntitlementV2(APIResource):
         self.refreshFrom(response)
         return self
 
+    def list_limits(self, enterprise_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/limits'.format(self.instanceUrl(str(enterprise_id)))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+        return self
+
     def check(self, enterprise_id, user_id, action, **params):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
