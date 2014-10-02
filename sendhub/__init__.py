@@ -689,6 +689,16 @@ class BillingAccount(APIResource):
 
         return self
 
+    def get_plan_data(self, enterprise_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/plan'.format(
+            self.instanceUrl(str(enterprise_id)))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+
+        return self
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/accounts"
