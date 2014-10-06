@@ -664,6 +664,11 @@ class BillingAccount(APIResource):
         url = self.instanceUrl(str(enterprise_id))
         requestor.request('delete', url)
 
+    def change_plan(self, enterprise_id, plan_id):
+        return self.update_object(
+            accountId=enterprise_id,
+            planId=plan_id)
+
     def add_user(self, enterprise_id, count=1):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
