@@ -280,7 +280,7 @@ class APIRequestor(object):
             if params:
                 absUrl = self.buildUrl(absUrl, params)
             data = None
-        elif meth == 'post':
+        elif (meth == 'post' or meth == 'put'):
             absUrl = self.buildUrl(absUrl, params, True)
 
             newParams = {}
