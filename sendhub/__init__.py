@@ -474,6 +474,17 @@ class APIResource(SendHubObject):
 
         return self
 
+    def update_object(self, obj_id, **params):
+
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(obj_id))
+        response = requestor.request('put', url, params)
+        self.refreshFrom(response)
+        self.id = obj_id
+
+        return self
+
     @classmethod
     def className(cls):
         if cls == APIResource:
@@ -666,6 +677,7 @@ class BillingAccount(APIResource):
 
     def change_plan(self, enterprise_id, plan_id):
         return self.update_object(
+            obj_id=enterprise_id,
             accountId=enterprise_id,
             planId=plan_id)
 
