@@ -621,8 +621,6 @@ class EntitlementV2(APIResource):
                 str(action))
             response = requestor.request('post', url, params)
             self.refreshFrom(response)
-
-            self.id = self.uuid
         except AuthorizationError as e:
             raise EntitlementError(e.message, e.devMessage, e.code, e.moreInfo)
 
@@ -634,6 +632,23 @@ class EntitlementV2(APIResource):
         url = self.instanceUrl(str(enterprise_id))
         response = requestor.request('delete', url)
         self.refreshFrom(response)
+
+        return self
+
+    def update_limit(self, enterprise_id, limit, value, **params):
+
+        try:
+            requestor = APIRequestor()
+            requestor.apiBase = self.getBaseUrl()
+            url = '{}/{}/{}'.format(
+                self.instanceUrl(str(enterprise_id)),
+                str(limit),
+                str(value))
+            response = requestor.request('post', url, params)
+            self.refreshFrom(response)
+
+        except AuthorizationError as e:
+            raise EntitlementError(e.message, e.devMessage, e.code, e.moreInfo)
 
         return self
 
