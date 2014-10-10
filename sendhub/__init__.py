@@ -640,7 +640,7 @@ class EntitlementV2(APIResource):
         try:
             requestor = APIRequestor()
             requestor.apiBase = self.getBaseUrl()
-            url = '{}/{}/{}'.format(
+            url = '{}/limits/{}/{}'.format(
                 self.instanceUrl(str(enterprise_id)),
                 str(limit),
                 str(value))
