@@ -706,6 +706,31 @@ class BillingAccount(APIResource):
 
         return self
 
+    def adjust_balance(
+            self,
+            enterprise_id,
+            balance_adjustment,
+            adjustment_type,
+            description
+    ):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/balance'.format(
+            self.instanceUrl(str(enterprise_id))
+        )
+        response = requestor.request(
+            'put',
+            url,
+            {
+                'balanceAdjustment': balance_adjustment,
+                'adjustmentType': adjustment_type,
+                'description': description
+            }
+        )
+        self.refreshFrom(response)
+
+        return response
+
     def get_plan_data(self, enterprise_id):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
