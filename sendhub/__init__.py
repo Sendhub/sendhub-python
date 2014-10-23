@@ -686,12 +686,20 @@ class BillingAccount(APIResource):
     def get_account(self, enterprise_id):
         return self.get_object(enterprise_id)
 
-    def create_account(self, enterprise_id, enterprise_name, plan_id, count):
+    def create_account(
+            self,
+            enterprise_id,
+            enterprise_name,
+            plan_id,
+            count,
+            customer_id=None):
+
         return self.create_object(
             id=enterprise_id,
             name=enterprise_name,
             planId=plan_id,
-            subscriptionCount=count)
+            subscriptionCount=count,
+            customer=customer_id)
 
     def delete_account(self, enterprise_id):
         requestor = APIRequestor()
