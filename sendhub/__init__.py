@@ -4,15 +4,13 @@
 
 ## Imports
 import logging
-import os
+import re
 import platform
 import sys
 import urllib
 import urlparse
 import textwrap
-import time
 import datetime
-import types
 import requests
 from version import VERSION
 import simplejson as json
@@ -47,6 +45,16 @@ class SendHubError(Exception):
         self.moreInfo = moreInfo.decode('utf-8') \
             if moreInfo is not None else ''
 
+_underscorer1 = re.compile(r'(.)([A-Z][a-z]+)')
+_underscorer2 = re.compile('([a-z0-9])([A-Z])')
+
+def camelToSnake(s):
+    """
+    Is it ironic that this function is written in camel case, yet it
+    converts to snake case? hmm..
+    """
+    subbed = _underscorer1.sub(r'\1_\2', s)
+    return _underscorer2.sub(r'\1_\2', subbed).lower()
 
 class APIError(SendHubError):
     pass
@@ -396,8 +404,9 @@ class SendHubObject(object):
     def refreshFrom(self, values):
 
         for k, v in values.iteritems():
-            self.__dict__[k] = convertToSendhubObject(v)
-            self._values.add(k)
+            name = camelToSnake(k)
+            self.__dict__[name] = convertToSendhubObject(v)
+            self._values.add(name)
 
 
     def __repr__(self):
