@@ -688,10 +688,10 @@ class BillingAccount(APIResource):
 
     def create_account(self, enterprise_id, enterprise_name, plan_id, count):
         return self.create_object(
-            accountId=enterprise_id,
-            accountName=enterprise_name,
+            id=enterprise_id,
+            name=enterprise_name,
             planId=plan_id,
-            count=count)
+            subscriptionCount=count)
 
     def delete_account(self, enterprise_id):
         requestor = APIRequestor()
@@ -702,14 +702,14 @@ class BillingAccount(APIResource):
     def change_plan(self, enterprise_id, plan_id):
         return self.update_object(
             obj_id=enterprise_id,
-            accountId=enterprise_id,
+            id=enterprise_id,
             planId=plan_id)
 
     def add_user(self, enterprise_id, count=1):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = '{}/users'.format(self.instanceUrl(str(enterprise_id)))
-        response = requestor.request('post', url, {'count': count})
+        response = requestor.request('post', url, {'subscriptionCount': count})
         self.refreshFrom(response)
 
         return self
