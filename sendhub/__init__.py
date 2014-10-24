@@ -4,15 +4,13 @@
 
 ## Imports
 import logging
-import os
+import re
 import platform
 import sys
 import urllib
 import urlparse
 import textwrap
-import time
 import datetime
-import types
 import requests
 from version import VERSION
 import simplejson as json
@@ -47,6 +45,16 @@ class SendHubError(Exception):
         self.moreInfo = moreInfo.decode('utf-8') \
             if moreInfo is not None else ''
 
+_underscorer1 = re.compile(r'(.)([A-Z][a-z]+)')
+_underscorer2 = re.compile('([a-z0-9])([A-Z])')
+
+def camelToSnake(s):
+    """
+    Is it ironic that this function is written in camel case, yet it
+    converts to snake case? hmm..
+    """
+    subbed = _underscorer1.sub(r'\1_\2', s)
+    return _underscorer2.sub(r'\1_\2', subbed).lower()
 
 class APIError(SendHubError):
     pass
@@ -396,8 +404,9 @@ class SendHubObject(object):
     def refreshFrom(self, values):
 
         for k, v in values.iteritems():
-            self.__dict__[k] = convertToSendhubObject(v)
-            self._values.add(k)
+            name = camelToSnake(k)
+            self.__dict__[name] = convertToSendhubObject(v)
+            self._values.add(name)
 
 
     def __repr__(self):
@@ -621,8 +630,6 @@ class EntitlementV2(APIResource):
                 str(action))
             response = requestor.request('post', url, params)
             self.refreshFrom(response)
-
-            self.id = self.uuid
         except AuthorizationError as e:
             raise EntitlementError(e.message, e.devMessage, e.code, e.moreInfo)
 
@@ -634,6 +641,23 @@ class EntitlementV2(APIResource):
         url = self.instanceUrl(str(enterprise_id))
         response = requestor.request('delete', url)
         self.refreshFrom(response)
+
+        return self
+
+    def update_limit(self, enterprise_id, limit, value, **params):
+
+        try:
+            requestor = APIRequestor()
+            requestor.apiBase = self.getBaseUrl()
+            url = '{}/limits/{}/{}'.format(
+                self.instanceUrl(str(enterprise_id)),
+                str(limit),
+                str(value))
+            response = requestor.request('post', url, params)
+            self.refreshFrom(response)
+
+        except AuthorizationError as e:
+            raise EntitlementError(e.message, e.devMessage, e.code, e.moreInfo)
 
         return self
 
@@ -662,12 +686,20 @@ class BillingAccount(APIResource):
     def get_account(self, enterprise_id):
         return self.get_object(enterprise_id)
 
-    def create_account(self, enterprise_id, enterprise_name, plan_id, count):
+    def create_account(
+            self,
+            enterprise_id,
+            enterprise_name,
+            plan_id,
+            count,
+            customer_id=None):
+
         return self.create_object(
-            accountId=enterprise_id,
-            accountName=enterprise_name,
+            id=enterprise_id,
+            name=enterprise_name,
             planId=plan_id,
-            count=count)
+            subscriptionCount=count,
+            customer=customer_id)
 
     def delete_account(self, enterprise_id):
         requestor = APIRequestor()
@@ -678,14 +710,14 @@ class BillingAccount(APIResource):
     def change_plan(self, enterprise_id, plan_id):
         return self.update_object(
             obj_id=enterprise_id,
-            accountId=enterprise_id,
+            id=enterprise_id,
             planId=plan_id)
 
     def add_user(self, enterprise_id, count=1):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
         url = '{}/users'.format(self.instanceUrl(str(enterprise_id)))
-        response = requestor.request('post', url, {'count': count})
+        response = requestor.request('post', url, {'subscriptionCount': count})
         self.refreshFrom(response)
 
         return self
