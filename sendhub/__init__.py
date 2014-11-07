@@ -697,7 +697,7 @@ class BillingAccount(APIResource):
         return self.create_object(
             id=enterprise_id,
             name=enterprise_name,
-            planId=plan_id,
+            planId=str(plan_id),
             subscriptionCount=count,
             customer=customer_id)
 
@@ -711,7 +711,7 @@ class BillingAccount(APIResource):
         return self.update_object(
             obj_id=enterprise_id,
             id=enterprise_id,
-            planId=plan_id)
+            planId=str(plan_id))
 
     def add_user(self, enterprise_id, count=1):
         requestor = APIRequestor()
