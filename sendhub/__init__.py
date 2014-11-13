@@ -783,6 +783,16 @@ class BillingAccount(APIResource):
 
         return self
 
+    def get_charge(self, enterprise_id, charge_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/charges/{}'.format(
+            self.instanceUrl(str(enterprise_id)), charge_id)
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+
+        return self
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/accounts"
