@@ -809,6 +809,58 @@ class BillingPlans(APIResource):
     def get_plan(self, plan_id):
         return self.get_object(plan_id)
 
+    def create_plan(
+            self,
+            plan_type_id,
+            name,
+            cost,
+            max_users,
+            max_messages,
+            max_sms_recipients,
+            max_s2s_recipients,
+            shortcode_keywords,
+            max_voice_minutes,
+            max_conference_lines,
+            max_conference_participants,
+            marketing_lines,
+            auto_attendant,
+            max_api_requests,
+            max_basic_vm_transcriptions,
+            max_premium_vm_transcriptions,
+            data_export,
+            chat_support,
+            phone_support,
+            training):
+
+        return self.create_object(
+            plan_type_id=plan_type_id,
+            name=name,
+            cost=cost,
+            max_users=max_users,
+            max_messages=max_messages,
+            max_sms_recipients=max_sms_recipients,
+            max_s2s_recipients=max_s2s_recipients,
+            shortcode_keywords=shortcode_keywords,
+            max_voice_minutes=max_voice_minutes,
+            max_conference_lines=max_conference_lines,
+            max_conference_participants=max_conference_participants,
+            marketing_lines=marketing_lines,
+            auto_attendant=auto_attendant,
+            max_api_requests=max_api_requests,
+            max_basic_vm_transcriptions=max_basic_vm_transcriptions,
+            max_premium_vm_transcriptions=max_premium_vm_transcriptions,
+            data_export=data_export,
+            chat_support=chat_support,
+            phone_support=phone_support,
+            training=training)
+
+
+    def update_plan(self, plan_id, active):
+        return self.update_object(
+            obj_id=plan_id,
+            id=plan_id,
+            active=active)
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/plans"
