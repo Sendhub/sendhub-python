@@ -467,10 +467,11 @@ class APIResource(SendHubObject):
         self.id = obj_id
         return self
 
-    def get_list(self):
+    def get_list(self, **params):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        response = requestor.request('get', self.classUrl())
+        response = requestor.request(
+            meth='get', url=self.classUrl(), params=params)
         return [SendHubObject.constructFrom(i) for i in response]
 
     def create_object(self, **params):
@@ -803,8 +804,8 @@ class BillingPlans(APIResource):
     def getBaseUrl(self):
         return billingBase
 
-    def list_plans(self):
-        return self.get_list()
+    def list_plans(self, with_hidden='1'):
+        return self.get_list(with_hidden='1' if with_hidden else '0')
 
     def get_plan(self, plan_id):
         return self.get_object(plan_id)
