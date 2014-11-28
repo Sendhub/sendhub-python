@@ -679,6 +679,19 @@ class Profile(APIResource):
         clsname = cls.className()
         return "/api/v3/%ss" % clsname
 
+class Enterprise(APIResource):
+
+    def getBaseUrl(self):
+        return profileBase
+
+    def get_enterprise(self, enterprise_id):
+        return self.get_object(enterprise_id)
+
+    @classmethod
+    def classUrl(cls):
+        clsname = cls.className()
+        return "/api/v3/%ss" % clsname
+
 class BillingAccount(APIResource):
 
     def getBaseUrl(self):
