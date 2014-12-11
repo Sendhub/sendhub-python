@@ -1,1 +1,1 @@
-# -*- coding: utf-8 -*-VERSION = '0.0.11'
+# -*- coding: utf-8 -*-VERSION = '0.0.12'

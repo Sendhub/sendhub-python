@@ -827,6 +827,7 @@ class BillingPlans(APIResource):
             self,
             plan_type_id,
             name,
+            description,
             cost,
             max_users,
             max_messages,
@@ -841,14 +842,12 @@ class BillingPlans(APIResource):
             max_api_requests,
             max_basic_vm_transcriptions,
             max_premium_vm_transcriptions,
-            data_export,
-            chat_support,
-            phone_support,
-            training):
+            data_export):
 
         return self.create_object(
             planTypeId=plan_type_id,
             name=name,
+            description=description,
             cost=str(cost),
             maxUsers=str(max_users),
             maxMessages=str(max_messages),
@@ -863,10 +862,7 @@ class BillingPlans(APIResource):
             maxApiRequests=str(max_api_requests),
             maxBasicVmTranscriptions=str(max_basic_vm_transcriptions),
             maxPremiumVmTranscriptions=str(max_premium_vm_transcriptions),
-            dataExport=data_export,
-            chatSupport=chat_support,
-            phoneSupport=phone_support,
-            training=training)
+            dataExport=data_export)
 
 
     def update_plan(self, plan_id, active):
