@@ -787,6 +787,17 @@ class BillingAccount(APIResource):
 
         return self
 
+    def get_plan_history(self, enterprise_id, offset, limit):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/plan_history'.format(
+            self.instanceUrl(str(enterprise_id)))
+        response = requestor.request(
+            'get', url, {'offset': offset, 'limit': limit})
+        self.refreshFrom(response)
+
+        return self
+
     def get_invoice(self, enterprise_id, invoice_id):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
