@@ -724,7 +724,7 @@ class BillingAccount(APIResource):
     def change_plan(self, enterprise_id, plan_id):
         return self.update_object(
             obj_id=enterprise_id,
-            id=str(enterprise_id,
+            id=str(enterprise_id),
             planId=str(plan_id))
 
     def add_user(self, enterprise_id, count=1):
