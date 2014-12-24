@@ -252,7 +252,7 @@ class APIRequestor(object):
     def request(self, meth, url, params={}):
         resp = None
 
-        @retry()
+        @retry(tries=3)
         def _wrapped_request():
             rbody, rcode = self.performRequest(meth, url, params)
             try:
