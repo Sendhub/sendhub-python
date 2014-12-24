@@ -250,19 +250,19 @@ class APIRequestor(object):
             return '%s?%s' % (url, cls.encode(params))
 
     def request(self, meth, url, params={}):
-        resp = None
+        resp = []
 
         @retry(tries=3)
         def _wrapped_request():
             rbody, rcode = self.performRequest(meth, url, params)
             try:
-                resp = self.interpretResponse(rbody, rcode)
+                resp.append(self.interpretResponse(rbody, rcode))
             except TryAgainLaterError:
                 return False
             return True
 
         if _wrapped_request():
-            return resp
+            return resp[0]
         else:
             raise APIError('API retries failed')
 
