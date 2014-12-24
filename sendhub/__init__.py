@@ -56,6 +56,71 @@ def camelToSnake(s):
     subbed = _underscorer1.sub(r'\1_\2', s)
     return _underscorer2.sub(r'\1_\2', subbed).lower()
 
+import math as _math, time as _time
+
+
+def retry(tries, delay=3, backoff=2, desired_outcome=True, fail_value=None):
+    """
+    Retry decorator with exponential backoff
+    Retries a function or method until it produces a desired outcome.
+
+    @param delay int Sets the initial delay in seconds, and backoff sets the
+        factor by which the delay should lengthen after each failure.
+    @param backoff int Must be greater than 1, or else it isn't really a
+        backoff.  Tries must be at least 0, and delay greater than 0.
+    @param desired_outcome Can be a value or a callable.
+        If it is a callable the produced value will be passed and success
+        is presumed if the invocation returns True.
+    @param fail_value Value to return in the case of failure.
+    """
+
+    if backoff <= 1:
+        raise ValueError('backoff must be greater than 1')
+
+    tries = _math.floor(tries)
+    if tries < 0:
+        raise ValueError('tries must be 0 or greater')
+
+    if delay <= 0:
+        raise ValueError('delay must be greater than 0')
+
+    def wrapped_retry(fn):
+        """Decorative wrapper."""
+        def retry_fn(*args, **kwargs):
+            """The function which does the actual retrying."""
+            # Make mutable:
+            mtries, mdelay = tries, delay
+
+            # First attempt.
+            rv = fn(*args, **kwargs)
+
+            while mtries > 0:
+                if rv == desired_outcome or \
+                    (callable(desired_outcome) and desired_outcome(rv) is True):
+                    # Success.
+                    return rv
+
+                # Consume an attempt.
+                mtries -= 1
+
+                # Wait...
+                _time.sleep(mdelay)
+
+                # Make future wait longer.
+                mdelay *= backoff
+
+                # Try again.
+                rv = fn(*args, **kwargs)
+
+            # Ran out of tries :-(
+            return False
+
+        # True decorator -> decorated function.
+        return retry_fn
+
+    # @retry(arg[, ...]) -> decorator.
+    return wrapped_retry
+
 class APIError(SendHubError):
     pass
 
@@ -73,6 +138,12 @@ class EntitlementError(SendHubError):
 class InvalidRequestError(SendHubError):
     def __init__(self, message, devMessage=None, code=None, moreInfo=None):
         super(InvalidRequestError, self).__init__(
+            message, devMessage, code, moreInfo)
+
+
+class TryAgainLaterError(SendHubError):
+    def __init__(self, message, devMessage=None, code=None, moreInfo=None):
+        super(TryAgainLaterError, self).__init__(
             message, devMessage, code, moreInfo)
 
 
@@ -179,9 +250,21 @@ class APIRequestor(object):
             return '%s?%s' % (url, cls.encode(params))
 
     def request(self, meth, url, params={}):
-        rbody, rcode = self.performRequest(meth, url, params)
-        resp = self.interpretResponse(rbody, rcode)
-        return resp
+        resp = None
+
+        @retry()
+        def _wrapped_request():
+            rbody, rcode = self.performRequest(meth, url, params)
+            try:
+                resp = self.interpretResponse(rbody, rcode)
+            except TryAgainLaterError:
+                return False
+            return True
+
+        if _wrapped_request():
+            return resp
+        else:
+            raise APIError('API retries failed')
 
     def handleApiError(self, rbody, rcode, resp):
         try:
@@ -213,6 +296,8 @@ class APIRequestor(object):
             raise AuthenticationError(message, devMessage, code, moreInfo)
         elif rcode == 403:
             raise AuthorizationError(message, devMessage, code, moreInfo)
+        elif rcode == 409 and 'Try again later' in message:
+            raise TryAgainLaterError(message, devMessage, code, moreInfo)
         else:
             raise APIError(message, devMessage, code, moreInfo)
 
