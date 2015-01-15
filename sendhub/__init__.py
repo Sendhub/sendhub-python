@@ -967,6 +967,12 @@ class BillingPlans(APIResource):
             id=plan_id,
             active=active)
 
+    def delete_plan(self, plan_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(plan_id))
+        requestor.request('delete', url)
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/plans"
