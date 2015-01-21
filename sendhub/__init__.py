@@ -1007,10 +1007,10 @@ class CreditCardBlacklist(APIResource):
         return self.create_object(
             fingerprint=fingerprint)
 
-    def delete_blacklist_item(self, plan_id):
+    def delete_blacklist_item(self, item_id):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = self.instanceUrl(str(plan_id))
+        url = self.instanceUrl(str(item_id))
         requestor.request('delete', url)
 
     @classmethod
