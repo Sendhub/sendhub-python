@@ -976,3 +976,43 @@ class BillingPlans(APIResource):
     @classmethod
     def classUrl(cls):
         return "/api/v2/plans"
+
+class CreditCardBlacklist(APIResource):
+
+    def getBaseUrl(self):
+        return billingBase
+
+    def list_blacklist(self, search_query=None):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+
+        search_url = [self.classUrl()]
+
+        if search_query:
+            search_url.append('/{}'.format(search_query))
+
+        url = ''.join(search_url)
+
+        response = requestor.request(
+            meth='get', url=url, params=None)
+        return [SendHubObject.constructFrom(i) for i in response]
+
+    def get_blacklist_item(self, item_id):
+        return self.get_object(item_id)
+
+    def create_blacklist_item(
+            self,
+            fingerprint):
+
+        return self.create_object(
+            fingerprint=fingerprint)
+
+    def delete_blacklist_item(self, plan_id):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(plan_id))
+        requestor.request('delete', url)
+
+    @classmethod
+    def classUrl(cls):
+        return "/api/v2/cards/blacklist"
