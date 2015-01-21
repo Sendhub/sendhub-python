@@ -994,7 +994,7 @@ class CreditCardBlacklist(APIResource):
         url = ''.join(search_url)
 
         response = requestor.request(
-            meth='get', url=url, params=None)
+            meth='get', url=url, params={})
         return [SendHubObject.constructFrom(i) for i in response]
 
     def get_blacklist_item(self, item_id):
