@@ -806,6 +806,29 @@ class BillingAccount(APIResource):
         url = self.instanceUrl(str(enterprise_id))
         requestor.request('delete', url)
 
+    def update_account(
+            self,
+            enterprise_id,
+            name=None,
+            plan_id=None,
+            subscription_count=None,
+            prorate_override=None):
+
+        params = {
+            'id': str(enterprise_id)
+        }
+
+        if name is not None:
+            params['name'] = name
+        if plan_id is not None:
+            params['plan_id'] = str(plan_id)
+        if subscription_count is not None:
+            params['subscription_count'] = subscription_count
+        if prorate_override is not None:
+            params['prorate_override'] = prorate_override
+
+        return self.update_object(obj_id=enterprise_id, **params)
+
     def change_plan(self, enterprise_id, plan_id):
         return self.update_object(
             obj_id=enterprise_id,
