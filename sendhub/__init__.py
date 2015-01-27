@@ -821,11 +821,11 @@ class BillingAccount(APIResource):
         if name is not None:
             params['name'] = name
         if plan_id is not None:
-            params['plan_id'] = str(plan_id)
+            params['planId'] = str(plan_id)
         if subscription_count is not None:
-            params['subscription_count'] = subscription_count
+            params['subscriptionCount'] = subscription_count
         if prorate_override is not None:
-            params['prorate_override'] = prorate_override
+            params['prorateOverride'] = prorate_override
 
         return self.update_object(obj_id=enterprise_id, **params)
 
