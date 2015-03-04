@@ -832,7 +832,7 @@ class BillingAccount(APIResource):
     def change_plan(self, enterprise_id, plan_id, prorate_override=None):
 
         params = {}
-        if prorate_override is None:
+        if prorate_override is not None:
             params['prorateOverride'] = prorate_override
 
         return self.update_object(
