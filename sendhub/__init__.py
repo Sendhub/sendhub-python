@@ -829,11 +829,17 @@ class BillingAccount(APIResource):
 
         return self.update_object(obj_id=enterprise_id, **params)
 
-    def change_plan(self, enterprise_id, plan_id):
+    def change_plan(self, enterprise_id, plan_id, prorate_override=None):
+
+        params = {}
+        if prorate_override is None:
+            params['prorateOverride'] = prorate_override
+
         return self.update_object(
             obj_id=enterprise_id,
             id=str(enterprise_id),
-            planId=str(plan_id))
+            planId=str(plan_id),
+            **params)
 
     def add_user(self, enterprise_id, count=1):
         requestor = APIRequestor()
