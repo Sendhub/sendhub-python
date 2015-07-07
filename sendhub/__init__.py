@@ -779,6 +779,22 @@ class Enterprise(APIResource):
 
 class BillingAccount(APIResource):
 
+    # if the user is on a paid plan then their plan change is prorated
+    DEFAULT_PLAN_CHANGE_STRATEGY = 'default'
+
+    # the user will not be charged for the plan change, the date will stay the
+    # same billing date, their subscription status will be trial (to ensure
+    # they stay on the same plan date)
+    UNPAID_PLAN_CHANGE_STRATEGY = 'unpaid'
+
+    # the user will be charged for the plan change, their billing date may be
+    # reset, their subscription status will be active
+    PAID_PLAN_CHANGE_STRATEGY = 'paid'
+
+    # the user will be unsubscribed from their current plan and subscribed
+    # a new plan
+    FORCED_FRESH_PLAN = 'forced_fresh'
+
     def getBaseUrl(self):
         return billingBase
 
@@ -812,7 +828,7 @@ class BillingAccount(APIResource):
             name=None,
             plan_id=None,
             subscription_count=None,
-            prorate_override=None):
+            plan_change_strategy=None):
 
         params = {
             'id': str(enterprise_id)
@@ -824,16 +840,16 @@ class BillingAccount(APIResource):
             params['planId'] = str(plan_id)
         if subscription_count is not None:
             params['subscriptionCount'] = subscription_count
-        if prorate_override is not None:
-            params['prorateOverride'] = prorate_override
+        if plan_change_strategy is not None:
+            params['planChangeStrategy'] = plan_change_strategy
 
         return self.update_object(obj_id=enterprise_id, **params)
 
-    def change_plan(self, enterprise_id, plan_id, prorate_override=None):
+    def change_plan(self, enterprise_id, plan_id, plan_change_strategy=None):
 
         params = {}
-        if prorate_override is not None:
-            params['prorateOverride'] = prorate_override
+        if plan_change_strategy is not None:
+            params['planChangeStrategy'] = plan_change_strategy
 
         return self.update_object(
             obj_id=enterprise_id,
