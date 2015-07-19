@@ -958,9 +958,10 @@ class BillingPlans(APIResource):
     def getBaseUrl(self):
         return billingBase
 
-    def list_plans(self, with_hidden='1', active='all'):
+    def list_plans(self, with_hidden='1', active_status='all'):
         return self.get_list(
-            with_hidden='1' if with_hidden else '0', active=active)
+            with_hidden='1' if with_hidden else '0',
+            active_status=active_status)
 
     def get_plan(self, plan_id):
         return self.get_object(plan_id)
