@@ -805,6 +805,7 @@ class BillingAccount(APIResource):
             self,
             enterprise_id,
             enterprise_name,
+            billing_email,
             plan_id,
             count,
             customer_id=None):
@@ -812,6 +813,7 @@ class BillingAccount(APIResource):
         return self.create_object(
             id=str(enterprise_id),
             name=enterprise_name,
+            email=billing_email,
             planId=str(plan_id),
             subscriptionCount=count,
             customer=customer_id)
