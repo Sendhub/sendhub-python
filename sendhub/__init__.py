@@ -828,6 +828,7 @@ class BillingAccount(APIResource):
             self,
             enterprise_id,
             name=None,
+            billing_email=None,
             plan_id=None,
             subscription_count=None,
             plan_change_strategy=None):
@@ -838,6 +839,8 @@ class BillingAccount(APIResource):
 
         if name is not None:
             params['name'] = name
+        if billing_email is not None:
+            params['email'] = billing_email
         if plan_id is not None:
             params['planId'] = str(plan_id)
         if subscription_count is not None:
