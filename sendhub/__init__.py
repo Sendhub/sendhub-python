@@ -791,14 +791,17 @@ class BillingAccount(APIResource):
             enterprise_name,
             plan_id,
             count,
-            customer_id=None):
+            customer_id=None,
+            billing_email=None
+    ):
 
         return self.create_object(
             id=str(enterprise_id),
             name=enterprise_name,
             planId=str(plan_id),
             subscriptionCount=count,
-            customer=customer_id)
+            customer=customer_id,
+            billingEmail=billing_email)
 
     def delete_account(self, enterprise_id):
         requestor = APIRequestor()
@@ -812,7 +815,9 @@ class BillingAccount(APIResource):
             name=None,
             plan_id=None,
             subscription_count=None,
-            prorate_override=None):
+            prorate_override=None,
+            billing_email=None
+    ):
 
         params = {
             'id': str(enterprise_id)
@@ -826,6 +831,8 @@ class BillingAccount(APIResource):
             params['subscriptionCount'] = subscription_count
         if prorate_override is not None:
             params['prorateOverride'] = prorate_override
+        if billing_email is not None:
+            params['billingEmail'] = billing_email
 
         return self.update_object(obj_id=enterprise_id, **params)
 
