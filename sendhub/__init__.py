@@ -2,7 +2,6 @@
 
 # SendHub Python bindings
 
-## Imports
 import logging
 import re
 import platform
@@ -20,10 +19,10 @@ except ImportError:
     import StringIO
 
 _httplib = 'requests'
-
 logger = logging.getLogger('sendhub')
 
-## Configuration variables
+
+# Configuration variables
 userName = None
 password = None
 internalApi = False
@@ -34,7 +33,7 @@ billingBase = 'https://billing.sendhub.com'
 apiVersion = None
 
 
-## Exceptions
+# Exceptions
 class SendHubError(Exception):
     def __init__(
             self, message=None, devMessage=None, code=None, moreInfo=None):
@@ -48,6 +47,7 @@ class SendHubError(Exception):
 _underscorer1 = re.compile(r'(.)([A-Z][a-z]+)')
 _underscorer2 = re.compile('([a-z0-9])([A-Z])')
 
+
 def camelToSnake(s):
     """
     Is it ironic that this function is written in camel case, yet it
@@ -56,7 +56,8 @@ def camelToSnake(s):
     subbed = _underscorer1.sub(r'\1_\2', s)
     return _underscorer2.sub(r'\1_\2', subbed).lower()
 
-import math as _math, time as _time
+import math as _math
+import time as _time
 
 
 def retry(tries, delay=3, backoff=2, desired_outcome=True, fail_value=None):
@@ -95,8 +96,11 @@ def retry(tries, delay=3, backoff=2, desired_outcome=True, fail_value=None):
             rv = fn(*args, **kwargs)
 
             while mtries > 0:
-                if rv == desired_outcome or \
-                    (callable(desired_outcome) and desired_outcome(rv) is True):
+                if (rv == desired_outcome or
+                        (
+                            callable(desired_outcome) and
+                            desired_outcome(rv) is True
+                        )):
                     # Success.
                     return rv
 
@@ -120,6 +124,7 @@ def retry(tries, delay=3, backoff=2, desired_outcome=True, fail_value=None):
 
     # @retry(arg[, ...]) -> decorator.
     return wrapped_retry
+
 
 class APIError(SendHubError):
     pass
@@ -150,6 +155,7 @@ class TryAgainLaterError(SendHubError):
 class AuthenticationError(SendHubError):
     pass
 
+
 class AuthorizationError(SendHubError):
     pass
 
@@ -170,7 +176,8 @@ def convertToSendhubObject(resp):
     else:
         return resp
 
-## Network transport
+
+# Network transport
 class APIRequestor(object):
 
     apiBase = None
@@ -241,8 +248,6 @@ class APIRequestor(object):
                         or param == 'apiUsername' or param == 'apiPassword'):
                     newParams[param] = params[param]
             params = newParams
-
-
         baseQuery = urlparse.urlparse(url).query
         if baseQuery:
             return '%s&%s' % (url, cls.encode(params))
@@ -353,7 +358,7 @@ class APIRequestor(object):
         # special case deleted because the response is empty
         if rcode == 204:
             resp = {
-                'message' : 'OK'
+                'message': 'OK'
             }
             return resp
 
@@ -373,7 +378,7 @@ class APIRequestor(object):
             if params:
                 absUrl = self.buildUrl(absUrl, params)
             data = None
-        elif (meth == 'post' or meth == 'put'):
+        elif meth in ('post', 'put', 'patch'):
             absUrl = self.buildUrl(absUrl, params, True)
 
             newParams = {}
@@ -432,11 +437,9 @@ class SendHubObject(object):
     def __init__(self, id=None, **params):
         self.__dict__['_values'] = set()
 
-
     def __setattr__(self, k, v):
         self.__dict__[k] = v
         self._values.add(k)
-
 
     def __getattr__(self, k):
         try:
@@ -444,20 +447,17 @@ class SendHubObject(object):
         except KeyError:
             pass
 
-
     def __getitem__(self, k):
         if k in self._values:
             return self.__dict__[k]
         else:
             raise KeyError(k)
 
-
     def get(self, k, default=None):
         try:
             return self[k]
         except KeyError:
             return default
-
 
     def setdefault(self, k, default=None):
         try:
@@ -466,18 +466,14 @@ class SendHubObject(object):
             self[k] = default
             return default
 
-
     def __setitem__(self, k, v):
         setattr(self, k, v)
-
 
     def keys(self):
         return self.toDict().keys()
 
-
     def values(self):
         return self.toDict().values()
-
 
     @classmethod
     def constructFrom(cls, values):
@@ -485,14 +481,12 @@ class SendHubObject(object):
         instance.refreshFrom(values)
         return instance
 
-
     def refreshFrom(self, values):
 
         for k, v in values.iteritems():
             name = camelToSnake(k)
             self.__dict__[name] = convertToSendhubObject(v)
             self._values.add(name)
-
 
     def __repr__(self):
         typeString = ''
@@ -504,15 +498,14 @@ class SendHubObject(object):
             idString = ' id=%s' % self.get('id').encode('utf8')
 
         return '<%s%s%s at %s> JSON: %s' % (
-        type(self).__name__, typeString, idString, hex(id(self)),
-        json.dumps(self.toDict(), sort_keys=True, indent=2,
-                   cls=SendHubObjectEncoder))
-
+            type(self).__name__, typeString, idString, hex(id(self)),
+            json.dumps(self.toDict(), sort_keys=True, indent=2,
+                       cls=SendHubObjectEncoder)
+        )
 
     def __str__(self):
         return json.dumps(self.toDict(), sort_keys=True, indent=2,
                           cls=SendHubObjectEncoder)
-
 
     def toDict(self):
         def _serialize(o):
@@ -602,6 +595,7 @@ class APIResource(SendHubObject):
         extn = urllib.quote_plus(id)
         return "%s/%s" % (base, extn)
 
+
 # API objects
 class Entitlement(APIResource):
 
@@ -647,8 +641,11 @@ class Entitlement(APIResource):
 
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
-        url = self.instanceUrl(str(self.userId)) + '/' + str(self.action) \
-              + '/' + str(self.id)
+        url = '/'.join([
+            self.instanceUrl(str(self.userId)),
+            str(self.action),
+            str(self.id)
+        ])
         response = requestor.request('post', url)
         self.refreshFrom(response)
 
@@ -673,6 +670,7 @@ class Entitlement(APIResource):
         self.refreshFrom(response)
 
         return self
+
 
 class EntitlementV2(APIResource):
 
@@ -751,10 +749,26 @@ class EntitlementV2(APIResource):
     def classUrl(cls):
         return "/api/v2/entitlements"
 
+
 class Profile(APIResource):
 
     def getBaseUrl(self):
         return profileBase
+
+    def fetch(self, userId):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(userId))
+        response = requestor.request('get', url)
+        self.refreshFrom(response)
+        return self
+
+    def update(self, userId, data):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = self.instanceUrl(str(userId))
+        requestor.request('patch', url, data)
+        return self
 
     def get_user(self, user_id):
         return self.get_object(user_id)
@@ -763,6 +777,7 @@ class Profile(APIResource):
     def classUrl(cls):
         clsname = cls.className()
         return "/api/v3/%ss" % clsname
+
 
 class Enterprise(APIResource):
 
@@ -776,6 +791,7 @@ class Enterprise(APIResource):
     def classUrl(cls):
         clsname = cls.className()
         return "/api/v3/%ss" % clsname
+
 
 class BillingAccount(APIResource):
 
@@ -1012,7 +1028,6 @@ class BillingPlans(APIResource):
             maxPremiumVmTranscriptions=str(max_premium_vm_transcriptions),
             dataExport=data_export)
 
-
     def update_plan(self, plan_id, active):
         return self.update_object(
             obj_id=plan_id,
@@ -1028,6 +1043,7 @@ class BillingPlans(APIResource):
     @classmethod
     def classUrl(cls):
         return "/api/v2/plans"
+
 
 class CreditCardBlacklist(APIResource):
 
