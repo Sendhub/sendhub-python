@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 
@@ -13,24 +14,23 @@ except ImportError:
 
 # Don't import sendhub module here, since deps may not be installed
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'sendhub'))
-from sendhub import version
+import version
 
 path, script = os.path.split(sys.argv[0])
 os.chdir(os.path.abspath(path))
 
-requests = 'requests >= 0.8.8'
-if sys.version_info < (2, 6):
-  requests += ', < 0.10.1'
-install_requires = [requests]
-
-setup(name='sendhub',
-      cmdclass = {'build_py': build_py},
-      version=version.VERSION,
-      description='SendHub python bindings',
-      author='SendHub',
-      author_email='support@sendhub.com',
-      url='https://sendhub.com/',
-      packages=['sendhub'],
-      package_data={'sendhub' : ['../VERSION']},
-      install_requires=install_requires,
+setup(
+    name='sendhub',
+    cmdclass={'build_py': build_py},
+    version=version.VERSION,
+    description='SendHub python bindings',
+    author='SendHub',
+    author_email='support@sendhub.com',
+    url='https://sendhub.com/',
+    packages=['sendhub'],
+    package_data={'sendhub': ['../VERSION']},
+    install_requires=[
+        'requests>=0.8.8',
+        'simplejson>=3.3.0',
+    ],
 )
