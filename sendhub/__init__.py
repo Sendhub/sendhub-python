@@ -970,6 +970,19 @@ class BillingAccount(APIResource):
 
         return self
 
+    def set_card(self, enterprise_id, token):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/card'.format(
+            self.instanceUrl(str(enterprise_id)))
+        response = requestor.request(
+            'put',
+            url,
+            {
+                'token': token
+            }
+        )
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/accounts"
