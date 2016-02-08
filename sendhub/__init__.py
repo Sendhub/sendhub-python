@@ -970,6 +970,23 @@ class BillingAccount(APIResource):
 
         return self
 
+    def update_email(self, enterprise_id, billing_email):
+        requestor = APIRequestor()
+        requestor.apiBase = self.getBaseUrl()
+        url = '{}/update_email'.format(
+            self.instanceUrl(str(enterprise_id))
+        )
+        response = requestor.request(
+            'put',
+            url,
+            {
+                'email': billing_email
+            }
+        )
+        self.refreshFrom(response)
+
+        return response
+
     @classmethod
     def classUrl(cls):
         return "/api/v2/accounts"
