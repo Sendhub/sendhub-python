@@ -1025,19 +1025,28 @@ class BillingPlans(APIResource):
             max_api_requests,
             max_basic_vm_transcriptions,
             max_premium_vm_transcriptions,
-            data_export):
+            data_export,
+            base_messages=-1,
+            base_voice_minutes=-1,
+            message_overage_price=0,
+            voice_price_per_minute=0
+            ):
 
         return self.create_object(
             planTypeId=plan_type_id,
             name=name,
             description=description,
             cost=str(cost),
+            msgOveragePrice=str(message_overage_price),
+            voicePricePerMinute=str(voice_price_per_minute),
             maxUsers=str(max_users),
+            baseMessages=str(base_messages),
             maxMessages=str(max_messages),
             maxSmsRecipients=str(max_sms_recipients),
             maxS2sRecipients=str(max_s2s_recipients),
             shortcodeKeywords=shortcode_keywords,
             canEnableShortcode=can_enable_shortcode,
+            baseVoiceMinutes=str(base_voice_minutes),
             maxVoiceMinutes=str(max_voice_minutes),
             maxConferenceLines=str(max_conference_lines),
             maxConferenceParticipants=str(max_conference_participants),
