@@ -909,7 +909,8 @@ class BillingAccount(APIResource):
             enterprise_id,
             balance_adjustment,
             adjustment_type,
-            description
+            description,
+            prorate=False
     ):
         requestor = APIRequestor()
         requestor.apiBase = self.getBaseUrl()
@@ -922,7 +923,8 @@ class BillingAccount(APIResource):
             {
                 'balanceAdjustment': balance_adjustment,
                 'adjustmentType': adjustment_type,
-                'description': description
+                'description': description,
+                'prorate': prorate
             }
         )
         self.refreshFrom(response)
