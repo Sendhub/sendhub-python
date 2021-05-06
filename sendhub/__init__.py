@@ -56,7 +56,7 @@ def camel_to_snake(_s):
     Is it ironic that this function is written in camel case, yet it
     converts to snake case? hmm..
     """
-    subbed = _UNDERSCORER1.sub(r'\1_\2', _s)
+    subbed = _UNDERSCORER1.sub(r'\1_\2', str(_s))
     return __UNDERSCORER2.sub(r'\1_\2', subbed).lower()
 
 
@@ -260,7 +260,8 @@ class APIRequestor:
     def request(self, meth, url, params=None):
         """Handles requests"""
         resp = []
-        params = params if params else {}
+        params = params if params else {"apiUsername": USERNAME,
+                                        "apiPassword": PASSWORD}
 
         @retry(tries=3)
         def _wrapped_request():
@@ -538,6 +539,7 @@ class SendHubObject:
             _v = getattr(self, k)
             _v = _serialize(_v)
             _d[k] = _v
+
         return _d
 
 
