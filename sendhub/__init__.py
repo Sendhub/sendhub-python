@@ -27,10 +27,10 @@ LOGGER = logging.getLogger('sendhub')
 USERNAME = None
 PASSWORD = None
 INTERNAL_API = False
-API_BASE = 'https://api.sendhub.com'
-ENTITLEMENTS_BASE = 'https://entitlements.sendhub.com'
-PROFILE_BASE = 'https://profile.sendhub.com'
-BILLING_BASE = 'https://billing.sendhub.com'
+API_BASE = 'https://api.s4.sendhub.com'
+ENTITLEMENTS_BASE = 'https://entitlements-s4.sendhub.com'
+PROFILE_BASE = 'https://profile-s4.sendhub.com'
+BILLING_BASE = 'https://billing-s4.sendhub.com'
 API_VERSION = None
 
 
