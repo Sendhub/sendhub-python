@@ -1038,10 +1038,10 @@ class BillingAccount(APIResource):
         :param data: Billing details like amount, description
         """
         requestor = APIRequestor()
-        requestor.apiBase = self.getBaseUrl()
-        url = '{}/invoices'.format(self.instanceUrl(str(enterprise_id)))
+        requestor.api_base = self.get_base_url()
+        url = '{}/invoices'.format(self.instance_url(str(enterprise_id)))
         response = requestor.request('post', url, data)
-        self.refreshFrom(response)
+        self.refresh_from(response)
 
         return self
 
