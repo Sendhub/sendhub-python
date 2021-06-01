@@ -1031,6 +1031,20 @@ class BillingAccount(APIResource):
 
         return self
 
+    def create_invoice(self, enterprise_id, data):
+        """
+        creates an invoice
+        :param enterprise_id: enterprise_id(Account ID)
+        :param data: Billing details like amount, description
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        url = '{}/invoices'.format(self.instance_url(str(enterprise_id)))
+        response = requestor.request('post', url, data)
+        self.refresh_from(response)
+
+        return self
+
     def get_charge(self, enterprise_id, charge_id):
         """To get the change"""
         requestor = APIRequestor()
