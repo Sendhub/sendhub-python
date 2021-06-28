@@ -368,7 +368,10 @@ class APIRequestor:
             return resp
 
         try:
-            resp = json.loads(rbody.decode('utf-8'))
+            if isinstance(rbody, bytes):
+                resp = json.loads(rbody.decode('utf-8'))
+            else:
+                resp = json.loads(rbody)
         except Exception as exp:
             raise APIError(
                 "Invalid response body from API: %s (HTTP response code "
