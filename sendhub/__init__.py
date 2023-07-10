@@ -1034,12 +1034,11 @@ class BillingAccount(APIResource):
 
         return self
 
-    def list_invoice(self, enterprise_id):
+    def list_invoices(self, enterprise_id):
         """To list the invoices by enterprise_id"""
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
-        url = '{}/invoices/'.format(
-            self.instance_url(str(enterprise_id)))
+        url = '{}/invoices'.format(self.instance_url(str(enterprise_id)))
         response = requestor.request('get', url)
         self.refresh_from(response)
 
