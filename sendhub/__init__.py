@@ -1034,16 +1034,17 @@ class BillingAccount(APIResource):
 
         return self
 
-    def list_invoices(self, enterprise_id):
+    def list_invoices(self, enterprise_id, limit=5, offset=0):
         """To list the invoices by enterprise_id"""
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
-        url = '{}/invoices'.format(self.instance_url(str(enterprise_id)))
+        url = '{}/invoices?limit={}&offset={}'.format(
+            self.instance_url(str(enterprise_id)), 
+            limit, offset)
         response = requestor.request('get', url)
         self.refresh_from(response)
-
         return self
-    
+
     def create_invoice(self, enterprise_id, data):
         """
         creates an invoice
