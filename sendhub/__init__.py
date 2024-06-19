@@ -978,7 +978,8 @@ class BillingAccount(APIResource):
             balance_adjustment,
             adjustment_type,
             description,
-            prorate=False
+            prorate=False,
+            void=False
     ):
         """Adjusts the balance for the given enterprise"""
         requestor = APIRequestor()
@@ -993,7 +994,8 @@ class BillingAccount(APIResource):
                 'balanceAdjustment': balance_adjustment,
                 'adjustmentType': adjustment_type,
                 'description': description,
-                'prorate': prorate
+                'prorate': prorate,
+                'void': void
             }
         )
         self.refresh_from(response)
