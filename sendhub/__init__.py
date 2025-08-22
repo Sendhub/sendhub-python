@@ -1124,6 +1124,7 @@ class BillingPlans(APIResource):
             max_premium_vm_transcriptions,
             data_export,
             hippa_plan,
+            mail_logo=True,
             base_messages=-1,
             base_voice_minutes=-1,
             message_overage_price=0,
@@ -1154,7 +1155,8 @@ class BillingPlans(APIResource):
             maxApiRequests=str(max_api_requests),
             maxBasicVmTranscriptions=str(max_basic_vm_transcriptions),
             maxPremiumVmTranscriptions=str(max_premium_vm_transcriptions),
-            dataExport=data_export)
+            dataExport=data_export,
+            mail_logo=mail_logo)
 
     def update_plan(self, plan_id, active):
         """To update the plan"""
