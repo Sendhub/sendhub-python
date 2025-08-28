@@ -1156,7 +1156,7 @@ class BillingPlans(APIResource):
             maxBasicVmTranscriptions=str(max_basic_vm_transcriptions),
             maxPremiumVmTranscriptions=str(max_premium_vm_transcriptions),
             dataExport=data_export,
-            mail_logo=mail_logo)
+            mailLogo=mail_logo)
 
     def update_plan(self, plan_id, active):
         """To update the plan"""
