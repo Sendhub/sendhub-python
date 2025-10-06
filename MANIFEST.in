@@ -1,0 +1,3 @@
+include sendhub/VERSION
+recursive-include sendhub *.py *.txt *.md
+

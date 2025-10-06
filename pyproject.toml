@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sendhub"
+description = "SendHub python bindings"
+readme = "README.md"
+requires-python = ">=3.8"
+
+# Tell PEP-621 that version is provided dynamically
+dynamic = ["version"]
+
+# Version is provided dynamically below via tool.setuptools.dynamic
+authors = [
+  { name = "SendHub", email = "support@sendhub.com" }
+]
+urls = { Home = "https://sendhub.com/" }
+keywords = ["sendhub", "api", "http", "bindings"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent"
+]
+dependencies = [
+  "requests>=2.32.5",
+  "simplejson>=3.20.1"
+]
+
+[project.optional-dependencies]
+dev = [ "pytest>=7.0", "black", "isort", "ruff" ]
+docs = [ "sphinx", "sphinx-rtd-theme" ]
+
+# setuptools-specific config
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sendhub", "sendhub.*"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+sendhub = ["VERSION", "*.txt", "*.md"]
+
+# Dynamic version: read VERSION constant from sendhub/version.py
+[tool.setuptools.dynamic.version]
+attr = "sendhub.version.VERSION"
