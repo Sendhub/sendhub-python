@@ -31,6 +31,13 @@ _LAZY_IMPORTS: Dict[str, str] = {
     "EntitlementV2": ".entitlements",
     "Profile": ".profile",
     "SendHubError": ".sendhub_error",
+    "APIError": ".sendhub_error",
+    "APIConnectionError": ".sendhub_error",
+    "EntitlementError": ".sendhub_error",
+    "InvalidRequestError": ".sendhub_error",
+    "TryAgainLaterError": ".sendhub_error",
+    "AuthenticationError": ".sendhub_error",
+    "AuthorizationError": ".sendhub_error",
     "SendHubObject": ".sendhub_object",
     # utils functions (loaded from .utils)
     "camel_to_snake": ".utils",
