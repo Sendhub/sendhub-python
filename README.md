@@ -1,4 +1,3 @@
-
 sendhub-python
 =========
 
@@ -11,13 +10,18 @@ Table Of Contents
   - [Table Of Contents](#table-of-contents)
   - [About](#about)
   - [What's New](#whats-new)
-    - [Version 0.25.10 (Latest)](#version-02510-latest)
+    - [Version 0.26.01 (Latest)](#version-02601-latest)
     - [Python Packaging Enhancements](#python-packaging-enhancements)
     - [Enhanced Authentication Session Management](#enhanced-authentication-session-management)
   - [Installation](#installation)
   - [Building \& Packaging](#building--packaging)
   - [Testing The Build](#testing-the-build)
   - [Development Workflow](#development-workflow)
+  - [Testing \& Quality](#testing--quality)
+    - [Unit Testing](#unit-testing)
+    - [Linting \& Formatting](#linting--formatting)
+    - [.gitignore Hygiene](#gitignore-hygiene)
+  - [Integration \& E2E Testing](#integration--e2e-testing)
   - [Project Layout](#project-layout)
   - [License](#license)
   - [Contributing](#contributing)
@@ -34,7 +38,7 @@ About
 What's New
 -----------------
 
-### Version 0.25.10 (Latest)
+### Version 0.26.01 (Latest)
 
 ### Python Packaging Enhancements
 
@@ -122,20 +126,91 @@ Optional: install all dev dependencies with
 pip install -e ".[dev]"
 ```
 
+Testing & Quality
+-----------------
+
+### Unit Testing
+
+- All unit tests live under `tests/unit/`.
+- Uses [pytest](https://docs.pytest.org/) with a modern, quiet, colored output configuration (see `pyproject.toml`).
+- Run all tests:
+
+  ```bash
+  pytest
+  ```
+
+- Coverage:
+
+  ```bash
+  coverage run -m pytest
+  coverage report -m sendhub/*.py
+  ```
+
+### Linting & Formatting
+
+- [black](https://black.readthedocs.io/), [isort](https://pycqa.github.io/isort/), and [ruff](https://docs.astral.sh/ruff/) are used for code style and linting.
+- Run all checks:
+
+  ```bash
+  black .
+  isort .
+  ruff check .
+  ```
+
+### .gitignore Hygiene
+
+- The `.gitignore` is curated to exclude all test, coverage, linter, and build artifacts, as well as IDE and virtual environment folders.
+
+Integration & E2E Testing
+------------------------
+
+- Integration and end-to-end (E2E) tests may require access to real or sandboxed external services (e.g., SendHub API, Stripe, etc.).
+- For integration/E2E, configure credentials and endpoints for sandbox environments. Do not use production credentials.
+- Clean up test data after runs to avoid polluting shared environments.
+- See `pyproject.toml` for test discovery and output settings.
+
 Project Layout
 -----------------
 
 ```txt
-.
 ├── LICENSE
 ├── MANIFEST.in
 ├── pyproject.toml
+├── pytest-report.xml
 ├── README.md
 ├── sendhub
-│   ├── __init__.py
-│   ├── __pycache__
-│   ├── VERSION
-│   └── version.py
+│   ├── __init__.py
+│   ├── api_requestor.py
+│   ├── api_resource.py
+│   ├── billing_accounts.py
+│   ├── billing_plans.py
+│   ├── billing_prices.py
+│   ├── billing_products.py
+│   ├── constants.py
+│   ├── creditcard_blacklists.py
+│   ├── enterprises.py
+│   ├── entitlements.py
+│   ├── profile.py
+│   ├── sendhub_error.py
+│   ├── sendhub_object.py
+│   ├── utils.py
+│   ├── VERSION
+│   └── version.py
+└── tests
+    └── unit
+        ├── test_api_requestor.py
+        ├── test_api_resource.py
+        ├── test_billing_accounts.py
+        ├── test_billing_plans.py
+        ├── test_billing_prices.py
+        ├── test_billing_products.py
+        ├── test_creditcard_blacklists.py
+        ├── test_enterprises.py
+        ├── test_entitlements.py
+        ├── test_profile.py
+        ├── test_sendhub_error.py
+        ├── test_sendhub_object.py
+        └── test_utils.py
 ```
 
 - `sendhub/` – package source

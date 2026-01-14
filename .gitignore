@@ -1,21 +1,15 @@
-########################
-# OS-specific
-########################
+# ----- [OS-specific] ---------------------------------------------------
 .DS_Store
 ._.DS_Store
 
-########################
-# Python: Bytecode / Extensions
-########################
+# ----- [Python: Bytecode / Extensions] ---------------------------------
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.so
 
-########################
-# Python: Virtual Environments
-########################
+# ----- [Python: Virtual Environments] ----------------------------------
 .env
 .env/
 env/
@@ -24,64 +18,61 @@ venv/
 bin/
 lib/
 lib64/
-
-########################
-# Python: Packaging / Distribution
-########################
 .Python
+
+# ----- [Python: Modern environments] -----------------------------------
+.mypy_cache/
+.pytest_cache/
+.coverage*
+coverage.xml
+htmlcov/
+.cache/
+.tox/
+
+# ----- [VS Code settings] ----------------------------------------------
+.vscode/
+
+# ----- [Jupyter Notebooks] ---------------------------------------------
+.ipynb_checkpoints/
+
+# ----- [Distribution / Packaging] --------------------------------------
 build/
 dist/
-develop-eggs/
+*.egg-info/
+*.egg
+*.whl
+sdist/
 eggs/
 parts/
-sdist/
+develop-eggs/
 var/
-*.egg
-*.egg-info/
 .installed.cfg
 
-########################
-# Python: Logs & Reports
-########################
+# ----- [Logs & Reports] ------------------------------------------------
 *.log
 pip-log.txt
 pip-delete-this-directory.txt
 celerybeat-schedule
 
-########################
-# Python: Testing & Coverage
-########################
-.coverage
-.tox/
-.pytest_cache/
-.cache
+# ----- [Test Reports] --------------------------------------------------
 nosetests.xml
 coverage.xml
-htmlcov/
 **/tests_reports/*
 
-########################
-# Python: Misc Tools
-########################
+# ----- [Misc Tools] ----------------------------------------------------
 .mr.developer.cfg
 .project
 .pydevproject
 .ropeproject
 
-########################
-# Django
-########################
+# ----- [Django] --------------------------------------------------------
 *.pot
 src/local_settings.py
 
-########################
-# Documentation (Sphinx)
-########################
+# ----- [Documentation (Sphinx)] ----------------------------------------
 docs/_build/
 
-########################
-# Frontend: Node / AngularJS / BackboneJS
-########################
+# ----- [Node / JS] -----------------------------------------------------
 node_modules/
 bower_components/
 npm-debug.log*
@@ -91,8 +82,36 @@ yarn-error.log*
 .pnp.js
 coverage/   # JS test coverage reports
 
-########################
-# IDE / Editor Config
-########################
+# ----- [IDE / Editor Config] -------------------------------------------
 .idea/
 .vscode/
+
+
+# ----- [Testing & coverage artifacts] -----------------------------------
+.coverage*
+htmlcov/
+coverage.xml
+pytest-report.xml
+.pytest_cache/
+
+# ----- [Linting & formatting caches] -------------------------------------------
+.ruff_cache/
+.mypy_cache/
+.cache/
+.tox/
+
+# ----- [Egg and build artifacts] -------------------------------------------
+*.egg-info/
+build/
+dist/
+sdist/
+
+# ----- [VS Code and IDE settings] -------------------------------------------
+.vscode/
+.idea/
+
+# ----- [Python virtual environments] -------------------------------------------
+.venv/
+venv/
+env/
+ENV/

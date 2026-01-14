@@ -45,3 +45,23 @@ sendhub = ["VERSION", "*.txt", "*.md"]
 # Dynamic version: read VERSION constant from sendhub/version.py
 [tool.setuptools.dynamic.version]
 attr = "sendhub.version.VERSION"
+
+# --------------------
+# Pytest configuration for concise, readable output
+# --------------------
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = [
+    "tests/unit"
+]
+
+
+addopts = [
+    "-q",
+    "--tb=short",
+    "--durations=5",
+    "--cov=.",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "-p", "no:warnings"
+]

@@ -9,6 +9,7 @@ This avoids circular imports while preserving the convenient `sendhub.Foo` API.
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 import types
 from typing import Dict, Set
@@ -52,8 +53,28 @@ try:
     _SYNC_TO_CONSTANTS: Set[str] = {
         name for name in dir(_const_mod) if name.isupper() or name.startswith("_UNDERSCORER")
     }
+    ENVIRONMENT_DETAIL = os.getenv('ENVIRONMENT_DETAIL', 'development')
 except Exception:
     _SYNC_TO_CONSTANTS = {"USERNAME", "PASSWORD"}  # conservative fallback
+    ENVIRONMENT_DETAIL = 'development'
+
+
+# -------------------------
+# Early placeholders to break circular imports
+# -------------------------
+
+def _early_stub(name: str):
+    def _stub(*_a, **_kw):
+        raise RuntimeError(
+            f"sendhub.{name} used before sendhub finished initializing"
+        )
+    return _stub
+
+# Pre-bind utils symbols so `from sendhub import X` never fails
+camel_to_snake = _early_stub("camel_to_snake")
+convert_to_sendhub_object = _early_stub("convert_to_sendhub_object")
+retry = _early_stub("retry")
+
 
 # -------------------------
 # Module wrapper class
@@ -196,5 +217,32 @@ def _force_import(name: str):
 
 # make helper available on the module
 mod.__dict__["_force_import"] = _force_import
+
+
+# -------------------------
+# Late binding: replace stubs with real utils implementations
+# -------------------------
+try:
+    from . import utils as _utils
+
+    mod.__dict__["camel_to_snake"] = _utils.camel_to_snake
+    mod.__dict__["convert_to_sendhub_object"] = _utils.convert_to_sendhub_object
+    mod.__dict__["retry"] = _utils.retry
+
+except Exception:
+    # If utils still can't load, stubs remain (safe, explicit failure)
+    pass
+
+
+
+# -------------------------
+# Module-level __getattr__ for direct imports
+# -------------------------
+def __getattr__(name):
+    """
+    Module-level __getattr__ to support direct imports (from sendhub import SomeClass).
+    Delegates to the lazy loading logic in the module wrapper.
+    """
+    return getattr(mod, name)
 
 # End of sendhub.__init__.py
