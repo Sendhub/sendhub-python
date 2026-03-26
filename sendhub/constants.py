@@ -34,6 +34,7 @@ ENTITLEMENTS_BASE: str = "https://entitlements.sendhub.com"
 PROFILE_BASE: str = "https://profile.sendhub.com"
 BILLING_BASE: str = "https://billing.sendhub.com"
 API_VERSION: Optional[str] = None
+VERIFY_SSL: bool = ENVIRONMENT_DETAIL != "development"
 
 _UNDERSCORER1 = re.compile(r"(.)([A-Z][a-z]+)")
 __UNDERSCORER2 = re.compile(r"([a-z0-9])([A-Z])")

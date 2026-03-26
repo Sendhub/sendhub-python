@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 import requests
 
+from sendhub import constants as _constants
 from sendhub.constants import (
     API_BASE,
     API_VERSION,
@@ -303,7 +304,7 @@ class APIRequestor:
                 f"Unrecognized HTTP method {meth}. This may indicate a bug in the SendHub bindings. Please contact support@sendhub.com for assistance."
             )
 
-        kwargs = {}
+        kwargs = {"verify": _constants.VERIFY_SSL}
         try:
             try:
                 LOGGER.debug(
