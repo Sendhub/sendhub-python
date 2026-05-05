@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -34,6 +34,54 @@ class BillingAccount(APIResource):
         """
         return self.get_object(enterprise_id)
 
+    def _billing_request(self, meth: str, url: str, params: Optional[dict] = None) -> object:
+        """Issue a request against the billing service."""
+
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        return requestor.request(meth, url, params)
+
+    @staticmethod
+    def _setup_intents_url(intent_id: Optional[str] = None) -> str:
+        """Build the setup-intent endpoint path."""
+
+        base_url = "/api/v2/setup-intents"
+        if intent_id is None:
+            return base_url
+        return f"{base_url}/{intent_id}"
+
+    @staticmethod
+    def _account_state_url(customer_id: str) -> str:
+        """Build the account-state endpoint path."""
+
+        return f"/api/v2/account-state/{customer_id}"
+
+    @staticmethod
+    def _extract_customer_id(account: object) -> Optional[str]:
+        """Read a customer id from either a dict or SendHubObject-style response."""
+
+        getter = getattr(account, "get", None)
+        if callable(getter):
+            customer_id = getter("customer")
+            if customer_id:
+                return str(customer_id)
+
+        customer_id = getattr(account, "customer", None)
+        if customer_id:
+            return str(customer_id)
+        return None
+
+    def _get_customer_id_for_enterprise(self, enterprise_id: int) -> str:
+        """Resolve the Stripe customer id from the billing account response."""
+
+        account = self.get_account(enterprise_id)
+        customer_id = self._extract_customer_id(account)
+        if not customer_id:
+            raise RuntimeError(
+                f"Billing account for enterprise_id={enterprise_id} does not expose a Stripe customer id"
+            )
+        return customer_id
+
     def create_account(
         self,
         enterprise_id: int,
@@ -63,6 +111,64 @@ class BillingAccount(APIResource):
             subscriptionCount=count,
             customer=customer_id,
             billingEmail=billing_email,
+        )
+
+    def create_setup_intent(
+        self,
+        enterprise_id: int,
+        payment_method_types: Optional[list[str]] = None,
+        correlation_id: Optional[str] = None,
+    ) -> object:
+        """Create a Stripe SetupIntent for the billing account's customer."""
+
+        customer_id = self._get_customer_id_for_enterprise(enterprise_id)
+        payload: dict[str, Any] = {
+            "customer_id": customer_id,
+            "account_id": str(enterprise_id),
+        }
+        if payment_method_types is not None:
+            payload["payment_method_types"] = payment_method_types
+        if correlation_id is not None:
+            payload["correlation_id"] = correlation_id
+
+        return self._billing_request("post", self._setup_intents_url(), payload)
+
+    def get_setup_intent(
+        self,
+        intent_id: str,
+        enterprise_id: Optional[int] = None,
+        correlation_id: Optional[str] = None,
+    ) -> object:
+        """Retrieve a Stripe SetupIntent without exposing bridge routing details to callers."""
+
+        params: dict[str, Any] = {}
+        if enterprise_id is not None:
+            params["account_id"] = str(enterprise_id)
+        if correlation_id is not None:
+            params["correlation_id"] = correlation_id
+
+        return self._billing_request(
+            "get",
+            self._setup_intents_url(intent_id),
+            params or None,
+        )
+
+    def get_account_state(
+        self,
+        enterprise_id: int,
+        correlation_id: Optional[str] = None,
+    ) -> object:
+        """Retrieve the Stripe-derived account state for a billing account."""
+
+        customer_id = self._get_customer_id_for_enterprise(enterprise_id)
+        params: dict[str, Any] = {"account_id": str(enterprise_id)}
+        if correlation_id is not None:
+            params["correlation_id"] = correlation_id
+
+        return self._billing_request(
+            "get",
+            self._account_state_url(customer_id),
+            params,
         )
 
     def delete_account(self, enterprise_id: int) -> None:

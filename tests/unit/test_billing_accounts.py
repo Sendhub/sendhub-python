@@ -159,5 +159,75 @@ def test_update_email(mock_api_requestor, billing_account):
     assert result == {"email": "updated"}
     assert hasattr(billing_account, "_refreshed")
 
+@patch.object(DummyAPIResource, "get_account")
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_create_setup_intent(mock_api_requestor, mock_get_account, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "seti_123", "customer": "cus_123"}
+    mock_get_account.return_value = {"customer": "cus_123"}
+
+    result = billing_account.create_setup_intent(
+        1,
+        payment_method_types=["card"],
+        correlation_id="corr-123",
+    )
+
+    assert result == {"id": "seti_123", "customer": "cus_123"}
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/setup-intents",
+        {
+            "customer_id": "cus_123",
+            "account_id": "1",
+            "payment_method_types": ["card"],
+            "correlation_id": "corr-123",
+        },
+    )
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_setup_intent(mock_api_requestor, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "seti_123", "status": "requires_payment_method"}
+
+    result = billing_account.get_setup_intent(
+        "seti_123",
+        enterprise_id=5,
+        correlation_id="corr-456",
+    )
+
+    assert result == {"id": "seti_123", "status": "requires_payment_method"}
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/setup-intents/seti_123",
+        {"account_id": "5", "correlation_id": "corr-456"},
+    )
+
+@patch.object(DummyAPIResource, "get_account")
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_account_state(mock_api_requestor, mock_get_account, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {
+        "has_valid_plan": True,
+        "is_delinquent": False,
+        "can_send_messages": True,
+    }
+    mock_get_account.return_value = {"customer": "cus_123"}
+
+    result = billing_account.get_account_state(7, correlation_id="corr-789")
+
+    assert result["can_send_messages"] is True
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/account-state/cus_123",
+        {"account_id": "7", "correlation_id": "corr-789"},
+    )
+
+@patch.object(DummyAPIResource, "get_account")
+def test_create_setup_intent_requires_customer_mapping(mock_get_account, billing_account):
+    mock_get_account.return_value = {"id": 1}
+
+    with pytest.raises(RuntimeError):
+        billing_account.create_setup_intent(1)
+
 def test_class_url():
     assert BillingAccount.class_url() == "/api/v2/accounts"
