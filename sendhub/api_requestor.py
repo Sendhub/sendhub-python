@@ -6,6 +6,7 @@ import urllib.parse
 from typing import Any, Dict, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
 
 from sendhub import constants as _constants
 from sendhub.constants import (
@@ -27,6 +28,14 @@ from sendhub.sendhub_error import (
 )
 from sendhub.utils import retry
 from sendhub.version import VERSION
+
+# Module-level Session shared across all APIRequestor calls.  Reuses TCP
+# connections to the entitlements and billing services instead of opening a
+# new socket on every request.
+_session = requests.Session()
+_adapter = HTTPAdapter(pool_connections=4, pool_maxsize=10, max_retries=2)
+_session.mount("http://", _adapter)
+_session.mount("https://", _adapter)
 
 
 class APIRequestor:
@@ -310,7 +319,7 @@ class APIRequestor:
                 LOGGER.debug(
                     f"Sending HTTP request: method={meth}, url={abs_url}, headers={headers}, data={data}"
                 )
-                result = requests.request(
+                result = _session.request(
                     meth, abs_url, headers=headers, data=data, timeout=80, **kwargs
                 )
             except TypeError as typ_err:
