@@ -194,18 +194,15 @@ class APIRequestor:
     def handle_api_error(rbody, rcode, resp):
         """Handles API Error"""
         try:
-            # message is required
-            message = resp["message"]
+            error_body = resp if isinstance(resp, dict) else {}
+            # "message" is the standard key; fall back to "error" for non-standard responses
+            message = error_body.get("message") or error_body.get("error")
+            if message is None:
+                raise KeyError("message")
         except (KeyError, TypeError) as err:
-            raise APIError(
-                "Invalid response object from API: %r (HTTP response code "
-                "was %d)" % (rbody, rcode),
-                "",
-                rcode,
-                "",
-            ) from err
+            raise APIError(f"Invalid response object from API: {rbody} (HTTP response code was {rcode})", "", rcode, "",) from err
 
-        dev_message = resp.get("dev_message", "")
+        dev_message = resp.get("dev_message", "") or resp.get("detail", "")
         code = resp.get("code", -1)
         more_info = resp.get("more_info", "")
 
