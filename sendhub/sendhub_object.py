@@ -83,7 +83,7 @@ class SendHubObject:
         """refresh from dict"""
         if not isinstance(values, dict):
             raise TypeError("values must be a dict")
-        for k, val in list(values.items()):
+        for k, val in values.items():
             name = camel_to_snake(k)
             self.__dict__[name] = convert_to_sendhub_object(val)
             self._values.add(name)
@@ -98,7 +98,7 @@ class SendHubObject:
                 return [_serialize(i) for i in _o]
             return _o
 
-        _d: Dict[str, Any] = dict()
+        _d: Dict[str, Any] = {}
         for k in sorted(self._values):
             if k == "_id":
                 continue

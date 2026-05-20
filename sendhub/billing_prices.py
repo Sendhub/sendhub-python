@@ -1,4 +1,4 @@
-from typing import Optional, TypeAlias
+from typing import Optional, Tuple, TypeAlias
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -134,3 +134,36 @@ class BillingPrices(APIResource):
         Returns the class url of BillingPrices.
         """
         return "/api/v2/prices"
+
+    def list_prices_cached(
+        self,
+        with_hidden: bool = True,
+        active_status: str = "all",
+        etag: Optional[str] = None,
+    ) -> Tuple[Optional[object], Optional[str], bool]:
+        """Cache-aware price list read.
+
+        Sends ``If-None-Match: <etag>`` when *etag* is supplied.  Returns a
+        3-tuple ``(prices, new_etag, not_modified)``.
+
+        * ``prices`` – list returned by the server, or ``None`` on ``304``.
+        * ``new_etag`` – value of the ``ETag`` response header, or ``None``.
+        * ``not_modified`` – ``True`` when the server replied with ``304``.
+        """
+        extra_headers: dict[str, str] = {}
+        if etag:
+            extra_headers["If-None-Match"] = etag
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        payload, rcode, resp_headers = requestor.request(
+            meth="get",
+            url=self.class_url(),
+            params={"with_hidden": "1" if with_hidden else "0", "active_status": active_status},
+            extra_headers=extra_headers or None,
+            return_metadata=True,
+        )
+        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        not_modified = rcode == 304
+        if not not_modified and payload is not None:
+            return payload, new_etag, not_modified
+        return None, new_etag, not_modified

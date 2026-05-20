@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -40,6 +40,35 @@ class BillingAccount(APIResource):
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
         return requestor.request(meth, url, params)
+
+    def _cached_billing_request(
+        self,
+        meth: str,
+        url: str,
+        params: Optional[dict] = None,
+        etag: Optional[str] = None,
+    ) -> Tuple[Any, Optional[str], bool]:
+        """Cache-aware variant of :meth:`_billing_request`.
+
+        Sends ``If-None-Match: <etag>`` when *etag* is supplied.  Returns a
+        3-tuple ``(payload, new_etag, not_modified)`` — identical semantics to
+        :meth:`~sendhub.api_resource.APIResource.get_cached`.
+        """
+        extra_headers: dict[str, str] = {}
+        if etag:
+            extra_headers["If-None-Match"] = etag
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        payload, rcode, resp_headers = requestor.request(
+            meth,
+            url,
+            params,
+            extra_headers=extra_headers or None,
+            return_metadata=True,
+        )
+        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        not_modified = rcode == 304
+        return payload, new_etag, not_modified
 
     @staticmethod
     def _setup_intents_url(intent_id: Optional[str] = None) -> str:
@@ -381,3 +410,77 @@ class BillingAccount(APIResource):
     def class_url(cls):
         """Returns a URL for the account"""
         return "/api/v2/accounts"
+
+    # ------------------------------------------------------------------
+    # Cache-aware read helpers
+    # ------------------------------------------------------------------
+
+    def get_account_cached(
+        self,
+        enterprise_id: int,
+        etag: Optional[str] = None,
+    ) -> Tuple[Any, Optional[str], bool]:
+        """Cache-aware retrieval of a billing account.
+
+        Returns ``(payload, new_etag, not_modified)``.
+        """
+        url = self.instance_url(str(enterprise_id))
+        return self._cached_billing_request("get", url, etag=etag)
+
+    def get_subscription_cached(
+        self,
+        enterprise_id: int,
+        etag: Optional[str] = None,
+    ) -> Tuple[Any, Optional[str], bool]:
+        """Cache-aware retrieval of subscription (payment) data.
+
+        Returns ``(payload, new_etag, not_modified)``.
+        """
+        url = f"{self.instance_url(str(enterprise_id))}/subscription"
+        return self._cached_billing_request("get", url, etag=etag)
+
+    def get_plan_cached(
+        self,
+        enterprise_id: int,
+        etag: Optional[str] = None,
+    ) -> Tuple[Any, Optional[str], bool]:
+        """Cache-aware retrieval of plan data.
+
+        Returns ``(payload, new_etag, not_modified)``.
+        """
+        url = f"{self.instance_url(str(enterprise_id))}/plan"
+        return self._cached_billing_request("get", url, etag=etag)
+
+    def get_plan_history_cached(
+        self,
+        enterprise_id: int,
+        offset: int,
+        limit: int,
+        etag: Optional[str] = None,
+    ) -> Tuple[Any, Optional[str], bool]:
+        """Cache-aware retrieval of plan history.
+
+        Returns ``(payload, new_etag, not_modified)``.
+        """
+        url = f"{self.instance_url(str(enterprise_id))}/plan_history"
+        return self._cached_billing_request(
+            "get", url, params={"offset": offset, "limit": limit}, etag=etag
+        )
+
+    def get_account_state_cached(
+        self,
+        enterprise_id: int,
+        etag: Optional[str] = None,
+        correlation_id: Optional[str] = None,
+    ) -> Tuple[Any, Optional[str], bool]:
+        """Cache-aware retrieval of Stripe-derived account state.
+
+        Returns ``(payload, new_etag, not_modified)``.
+        """
+        customer_id = self._get_customer_id_for_enterprise(enterprise_id)
+        params: dict[str, Any] = {"account_id": str(enterprise_id)}
+        if correlation_id is not None:
+            params["correlation_id"] = correlation_id
+        return self._cached_billing_request(
+            "get", self._account_state_url(customer_id), params=params, etag=etag
+        )

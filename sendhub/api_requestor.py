@@ -95,7 +95,7 @@ class APIRequestor:
             datetime.datetime: cls.encode_datetime,
         }
         stk: Dict[str, Any] = {}
-        for key, value in list(_d.items()):
+        for key, value in _d.items():
             key = cls.utf8(key)
             try:
                 encoder = encoders[value.__class__]
@@ -149,8 +149,28 @@ class APIRequestor:
             return f"{url}&{cls.encode(params)}"
         return f"{url}?{cls.encode(params)}"
 
-    def request(self, meth: str, url: str, params: Optional[dict] = None) -> Any:
-        """Handles requests"""
+    def request(
+        self,
+        meth: str,
+        url: str,
+        params: Optional[dict] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+        return_metadata: bool = False,
+    ) -> Any:
+        """Handles requests.
+
+        Args:
+            meth: HTTP method string.
+            url: Endpoint path.
+            params: Query/body parameters.
+            extra_headers: Optional caller-supplied headers merged into the
+                request without displacing auth headers already added by the
+                transport layer (e.g. ``{"If-None-Match": etag}``).
+            return_metadata: When *True* the method returns a
+                ``(payload, status_code, response_headers)`` 3-tuple instead
+                of just ``payload``.  Useful for cache-control workflows that
+                need to inspect ``ETag`` or detect a ``304 Not Modified``.
+        """
         if not isinstance(meth, str):
             raise TypeError("meth must be a string")
         if not isinstance(url, str):
@@ -158,7 +178,8 @@ class APIRequestor:
         if params is not None and not isinstance(params, dict):
             raise TypeError("params must be a dict or None")
 
-        resp = []
+        resp: list = []
+        _meta: list[tuple[int, Dict[str, str]]] = []
         params = (
             params if params else {"apiUsername": USERNAME, "apiPassword": PASSWORD}
         )
@@ -173,9 +194,21 @@ class APIRequestor:
         @retry(tries=3)
         def _wrapped_request():
             try:
-                rbody, rcode = self.perform_request(meth, url, params)
+                if return_metadata:
+                    rbody, rcode, resp_headers = self.perform_request(
+                        meth, url, params,
+                        extra_headers=extra_headers,
+                        return_metadata=True,
+                    )
+                else:
+                    rbody, rcode, _ = self.perform_request(
+                        meth, url, params, extra_headers=extra_headers
+                    )
                 LOGGER.debug(f"Raw response: code={rcode}, body={rbody}")
-                resp.append(self.interpret_response(rbody, rcode))
+                payload = self.interpret_response(rbody, rcode)
+                resp.append(payload)
+                if return_metadata:
+                    _meta.append((rcode, resp_headers))
             except TryAgainLaterError as e:
                 LOGGER.debug(f"TryAgainLaterError encountered: {e}")
                 return False
@@ -185,8 +218,12 @@ class APIRequestor:
             return True
 
         if _wrapped_request():
-            LOGGER.debug(f"Request successful: {resp[0]}")
-            return resp[0]
+            payload = resp[0]
+            LOGGER.debug(f"Request successful: {payload}")
+            if return_metadata:
+                rcode, resp_headers = _meta[0]
+                return payload, rcode, resp_headers
+            return payload
         LOGGER.error("API retries failed")
         raise APIError("API retries failed")
 
@@ -216,7 +253,7 @@ class APIRequestor:
             raise TryAgainLaterError(message, dev_message, code, more_info)
         raise APIError(message, dev_message, code, more_info)
 
-    def perform_request(self, meth, url, params=None):
+    def perform_request(self, meth, url, params=None, extra_headers=None, return_metadata=False):
         """
         Mechanism for issuing an API call
         """
@@ -255,19 +292,33 @@ class APIRequestor:
         if API_VERSION is not None:
             headers["SendHub-Version"] = API_VERSION
 
-        rbody, rcode = self.do_send_request(meth, abs_url, headers, params)
+        if return_metadata:
+            rbody, rcode, resp_headers = self.do_send_request(
+                meth, abs_url, headers, params,
+                extra_headers=extra_headers,
+                return_metadata=True,
+            )
+        else:
+            rbody, rcode, _ = self.do_send_request(
+                meth, abs_url, headers, params, extra_headers=extra_headers
+            )
 
         LOGGER.debug(
             f"API request to {abs_url} returned response code: {rcode} & response body: {rbody}"
         )
 
-        return rbody, rcode
+        if return_metadata:
+            return rbody, rcode, resp_headers
+        return rbody, rcode, None
 
     def interpret_response(self, rbody, rcode):
         """special case deleted because the response is empty"""
         if rcode == 204:
             resp = {"message": "OK"}
             return resp
+        if rcode == 304:
+            # Not Modified — caller should use its cached payload.
+            return None
 
         try:
             if isinstance(rbody, bytes):
@@ -284,8 +335,10 @@ class APIRequestor:
             self.handle_api_error(rbody, rcode, resp)
         return resp
 
-    def do_send_request(self, meth, abs_url, headers, params):
+    def do_send_request(self, meth, abs_url, headers, params, extra_headers=None, return_metadata=False):
         """Sends request"""
+        if extra_headers:
+            headers = {**headers, **extra_headers}
 
         content = ""
         status_code = ""
@@ -330,7 +383,8 @@ class APIRequestor:
         except requests.exceptions.RequestException as exp_err:
             LOGGER.debug(f"RequestException in do_send_request: {exp_err}")
             self.handle_request_error(exp_err)
-        return content, status_code
+        resp_headers = dict(result.headers) if return_metadata else None
+        return content, status_code, resp_headers
 
     @staticmethod
     def handle_request_error(_e):

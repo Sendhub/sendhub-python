@@ -14,6 +14,11 @@ import sys
 import types
 from typing import Dict, Set
 
+# Module path constants — centralised to avoid repeating string literals.
+_MOD_CONSTANTS = ".constants"
+_MOD_SENDHUB_ERROR = ".sendhub_error"
+_MOD_UTILS = ".utils"
+
 # -------------------------
 # Configuration: which names to expose lazily and which to sync to constants
 # -------------------------
@@ -34,29 +39,29 @@ _LAZY_IMPORTS: Dict[str, str] = {
     "Invoice": ".invoices",
     "PaymentMethod": ".payment_methods",
     "Profile": ".profile",
-    "SendHubError": ".sendhub_error",
-    "APIError": ".sendhub_error",
-    "APIConnectionError": ".sendhub_error",
-    "EntitlementError": ".sendhub_error",
-    "InvalidRequestError": ".sendhub_error",
-    "TryAgainLaterError": ".sendhub_error",
-    "AuthenticationError": ".sendhub_error",
-    "AuthorizationError": ".sendhub_error",
+    "SendHubError": _MOD_SENDHUB_ERROR,
+    "APIError": _MOD_SENDHUB_ERROR,
+    "APIConnectionError": _MOD_SENDHUB_ERROR,
+    "EntitlementError": _MOD_SENDHUB_ERROR,
+    "InvalidRequestError": _MOD_SENDHUB_ERROR,
+    "TryAgainLaterError": _MOD_SENDHUB_ERROR,
+    "AuthenticationError": _MOD_SENDHUB_ERROR,
+    "AuthorizationError": _MOD_SENDHUB_ERROR,
     "SendHubObject": ".sendhub_object",
     "StripeCustomer": ".stripe_customers",
     "StripePrice": ".stripe_prices",
     "StripeProduct": ".stripe_products",
     "StripeSubscription": ".stripe_subscriptions",
     # utils functions (loaded from .utils)
-    "camel_to_snake": ".utils",
-    "convert_to_sendhub_object": ".utils",
-    "retry": ".utils",
+    "camel_to_snake": _MOD_UTILS,
+    "convert_to_sendhub_object": _MOD_UTILS,
+    "retry": _MOD_UTILS,
 }
 
 # Determine which names we should keep in sync with sendhub.constants.
 # Prefer to auto-detect uppercase names from constants, but fall back to a minimal set.
 try:
-    _const_mod = importlib.import_module(__name__ + ".constants")
+    _const_mod = importlib.import_module(__name__ + _MOD_CONSTANTS)
     _SYNC_TO_CONSTANTS: Set[str] = {
         name for name in dir(_const_mod) if name.isupper() or name.startswith("_UNDERSCORER")
     }
@@ -98,7 +103,7 @@ class _Package(types.ModuleType):
         # 1) synced constants (uppercase-ish)
         if name in _SYNC_TO_CONSTANTS:
             try:
-                const = importlib.import_module(__name__ + ".constants")
+                const = importlib.import_module(__name__ + _MOD_CONSTANTS)
                 if hasattr(const, name):
                     val = getattr(const, name)
                     # cache on module so subsequent lookups are fast
@@ -134,7 +139,7 @@ class _Package(types.ModuleType):
         # Mirror synced constants into the constants module when set on package.
         if name in _SYNC_TO_CONSTANTS:
             try:
-                const = importlib.import_module(__name__ + ".constants")
+                const = importlib.import_module(__name__ + _MOD_CONSTANTS)
                 setattr(const, name, value)
             except Exception:
                 # ignore write failures to constants (we still set on the module)
@@ -161,7 +166,7 @@ _new_mod.__dict__.update(_current_mod.__dict__)
 
 # preload any existing constant values into the package object (so they appear before assignment)
 try:
-    const = importlib.import_module(__name__ + ".constants")
+    const = importlib.import_module(__name__ + _MOD_CONSTANTS)
     for nm in _SYNC_TO_CONSTANTS:
         if hasattr(const, nm):
             _new_mod.__dict__.setdefault(nm, getattr(const, nm))

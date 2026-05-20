@@ -231,3 +231,119 @@ def test_create_setup_intent_requires_customer_mapping(mock_get_account, billing
 
 def test_class_url():
     assert BillingAccount.class_url() == "/api/v2/accounts"
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware helpers
+# ---------------------------------------------------------------------------
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_cached_billing_request_200(mock_api_requestor, billing_account):
+    """_cached_billing_request returns (payload, etag, False) on 200."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"id": 1}, 200, {"ETag": '"v1"'})
+    payload, etag, not_modified = billing_account._cached_billing_request("get", "/some/url")
+    assert payload == {"id": 1}
+    assert etag == '"v1"'
+    assert not_modified is False
+    call_kwargs = mock_instance.request.call_args
+    assert call_kwargs[1]["return_metadata"] is True
+    assert call_kwargs[1].get("extra_headers") is None  # no etag → no header
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_cached_billing_request_sends_if_none_match(mock_api_requestor, billing_account):
+    """_cached_billing_request sends If-None-Match when etag is provided."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = (None, 304, {"ETag": '"v1"'})
+    payload, etag, not_modified = billing_account._cached_billing_request(
+        "get", "/some/url", etag='"v1"'
+    )
+    assert not_modified is True
+    call_kwargs = mock_instance.request.call_args
+    assert call_kwargs[1]["extra_headers"] == {"If-None-Match": '"v1"'}
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_account_cached_200(mock_api_requestor, billing_account):
+    """get_account_cached hits the account endpoint and returns metadata."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"id": 1}, 200, {"ETag": '"acct-v1"'})
+    payload, etag, not_modified = billing_account.get_account_cached(1)
+    assert not_modified is False
+    assert etag == '"acct-v1"'
+    called_url = mock_instance.request.call_args[0][1]
+    assert "accounts" in called_url
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_account_cached_304(mock_api_requestor, billing_account):
+    """get_account_cached returns (None, etag, True) on 304."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = (None, 304, {"ETag": '"acct-v1"'})
+    payload, etag, not_modified = billing_account.get_account_cached(1, etag='"acct-v1"')
+    assert payload is None
+    assert not_modified is True
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_subscription_cached_200(mock_api_requestor, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"subscription": "data"}, 200, {"ETag": '"sub-v1"'})
+    payload, etag, not_modified = billing_account.get_subscription_cached(1)
+    assert not_modified is False
+    called_url = mock_instance.request.call_args[0][1]
+    assert called_url.endswith("/subscription")
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_plan_cached_200(mock_api_requestor, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"plan": "data"}, 200, {"ETag": '"plan-v1"'})
+    payload, etag, not_modified = billing_account.get_plan_cached(1)
+    assert not_modified is False
+    called_url = mock_instance.request.call_args[0][1]
+    assert called_url.endswith("/plan")
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_plan_history_cached_200(mock_api_requestor, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"history": []}, 200, {"ETag": '"hist-v1"'})
+    payload, etag, not_modified = billing_account.get_plan_history_cached(1, offset=0, limit=10)
+    assert not_modified is False
+    called_url = mock_instance.request.call_args[0][1]
+    assert called_url.endswith("/plan_history")
+    # offset/limit forwarded as params
+    called_params = mock_instance.request.call_args[0][2]
+    assert called_params == {"offset": 0, "limit": 10}
+
+
+@patch.object(DummyAPIResource, "get_account")
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_account_state_cached_200(mock_api_requestor, mock_get_account, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"can_send_messages": True}, 200, {"ETag": '"state-v1"'})
+    mock_get_account.return_value = {"customer": "cus_abc"}
+    payload, etag, not_modified = billing_account.get_account_state_cached(
+        5, correlation_id="corr-1"
+    )
+    assert not_modified is False
+    called_url = mock_instance.request.call_args[0][1]
+    assert "account-state/cus_abc" in called_url
+    called_params = mock_instance.request.call_args[0][2]
+    assert called_params["account_id"] == "5"
+    assert called_params["correlation_id"] == "corr-1"
+
+
+@patch.object(DummyAPIResource, "get_account")
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_account_state_cached_304(mock_api_requestor, mock_get_account, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = (None, 304, {"ETag": '"state-v1"'})
+    mock_get_account.return_value = {"customer": "cus_abc"}
+    payload, etag, not_modified = billing_account.get_account_state_cached(
+        5, etag='"state-v1"'
+    )
+    assert payload is None
+    assert not_modified is True

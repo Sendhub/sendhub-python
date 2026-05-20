@@ -98,3 +98,99 @@ def test_class_url():
         def class_name(cls):
             return "dummy"
     assert Dummy.class_url() == "/v1/dummys"
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware: get_cached
+# ---------------------------------------------------------------------------
+
+@patch("sendhub.api_resource.APIRequestor")
+def test_get_cached_200_no_etag(mock_api_requestor, resource):
+    """get_cached with no etag returns (payload, new_etag, False)."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"id": 7}, 200, {"ETag": '"v1"'})
+    with patch.object(resource, "refresh_from"):
+        payload, new_etag, not_modified = resource.get_cached(7)
+
+    assert payload == {"id": 7}
+    assert new_etag == '"v1"'
+    assert not_modified is False
+    # No If-None-Match header should be sent when etag is absent
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs.get("extra_headers") is None
+    assert call_kwargs["return_metadata"] is True
+
+
+@patch("sendhub.api_resource.APIRequestor")
+def test_get_cached_200_with_etag(mock_api_requestor, resource):
+    """get_cached sends If-None-Match when etag is provided."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ({"id": 8}, 200, {"ETag": '"v2"'})
+    with patch.object(resource, "refresh_from"):
+        payload, new_etag, not_modified = resource.get_cached(8, etag='"v1"')
+
+    assert not_modified is False
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs["extra_headers"] == {"If-None-Match": '"v1"'}
+
+
+@patch("sendhub.api_resource.APIRequestor")
+def test_get_cached_304(mock_api_requestor, resource):
+    """get_cached with 304 returns (None, etag, True) without calling refresh_from."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = (None, 304, {"ETag": '"v1"'})
+    with patch.object(resource, "refresh_from") as mock_refresh:
+        payload, new_etag, not_modified = resource.get_cached(9, etag='"v1"')
+
+    assert payload is None
+    assert new_etag == '"v1"'
+    assert not_modified is True
+    mock_refresh.assert_not_called()
+
+
+def test_get_cached_none_obj_id(resource):
+    with pytest.raises(ValueError):
+        resource.get_cached(None)
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware: get_list_cached
+# ---------------------------------------------------------------------------
+
+@patch("sendhub.api_resource.APIRequestor")
+def test_get_list_cached_200_no_etag(mock_api_requestor, resource):
+    """get_list_cached returns (items, new_etag, False) on 200."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ([{"id": 1}, {"id": 2}], 200, {"ETag": '"list-v1"'})
+    items, new_etag, not_modified = resource.get_list_cached()
+
+    assert len(items) == 2
+    assert new_etag == '"list-v1"'
+    assert not_modified is False
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs.get("extra_headers") is None
+
+
+@patch("sendhub.api_resource.APIRequestor")
+def test_get_list_cached_304(mock_api_requestor, resource):
+    """get_list_cached returns (None, etag, True) on 304."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = (None, 304, {"ETag": '"list-v1"'})
+    items, new_etag, not_modified = resource.get_list_cached(etag='"list-v1"')
+
+    assert items is None
+    assert new_etag == '"list-v1"'
+    assert not_modified is True
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs["extra_headers"] == {"If-None-Match": '"list-v1"'}
+
+
+@patch("sendhub.api_resource.APIRequestor")
+def test_get_list_cached_with_params(mock_api_requestor, resource):
+    """Extra kwargs are forwarded as query params."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ([{"id": 3}], 200, {})
+    resource.get_list_cached(foo="bar")
+
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs.get("params") == {"foo": "bar"}

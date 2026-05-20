@@ -10,9 +10,15 @@ Table Of Contents
   - [Table Of Contents](#table-of-contents)
   - [About](#about)
   - [What's New](#whats-new)
-    - [Version 0.26.01 (Latest)](#version-02601-latest)
+    - [Version 0.26.05 (Latest)](#version-02605-latest)
     - [Python Packaging Enhancements](#python-packaging-enhancements)
     - [Enhanced Authentication Session Management](#enhanced-authentication-session-management)
+    - [Cache-Aware Billing Reads](#cache-aware-billing-reads)
+  - [Cache-Aware Reads Usage](#cache-aware-reads-usage)
+    - [First fetch — store the ETag](#first-fetch--store-the-etag)
+    - [Subsequent fetch — revalidate with If-None-Match](#subsequent-fetch--revalidate-with-if-none-match)
+    - [Other cached helpers](#other-cached-helpers)
+    - [Low-level transport](#low-level-transport)
   - [Installation](#installation)
   - [Building \& Packaging](#building--packaging)
   - [Testing The Build](#testing-the-build)
@@ -38,7 +44,7 @@ About
 What's New
 -----------------
 
-### Version 0.26.01 (Latest)
+### Version 0.26.05 (Latest)
 
 ### Python Packaging Enhancements
 
@@ -49,7 +55,102 @@ What's New
 - **Support for Python 3.13**: Keeping the implemented logic same, the code has been improved to utilize python 3.13
 - **New endpoints under Billing Accounts**: To accomodate the stripe changes the billing account has been enhanced.
 
+### Cache-Aware Billing Reads
+
+- **Conditional GET support in `APIRequestor`**: `request()` now accepts
+  `extra_headers` (merged into the outgoing request without overwriting auth
+  headers) and `return_metadata` (returns a `(payload, status_code,
+  response_headers)` 3-tuple instead of just the payload).
+- **`304 Not Modified` handling**: `interpret_response` short-circuits on 304
+  and returns `None`, so callers can detect cache hits without an exception.
+- **`APIResource` helpers**: `get_cached(obj_id, etag=None)` and
+  `get_list_cached(etag=None, **params)` wrap the transport layer so
+  higher-level classes don't have to build `If-None-Match` logic themselves.
+- **`BillingAccount` cached reads**: `get_account_cached`,
+  `get_subscription_cached`, `get_plan_cached`, `get_plan_history_cached`, and
+  `get_account_state_cached` all accept an optional `etag` and return
+  `(payload, new_etag, not_modified)`.
+- **`BillingProducts` / `BillingPrices`**: `list_products_cached` and
+  `list_prices_cached` follow the same convention.
+
 > **Migration Note**: This release maintains full backward compatibility. No breaking changes were introduced.
+
+Cache-Aware Reads Usage
+-----------------
+
+All existing calls continue to work unchanged.  The new `*_cached` helpers
+and the `return_metadata` flag are strictly opt-in.
+
+### First fetch — store the ETag
+
+```python
+from sendhub.billing_accounts import BillingAccount
+
+ba = BillingAccount()
+
+# Normal first fetch — capture the ETag from the response metadata
+payload, etag, not_modified = ba.get_account_cached(enterprise_id=42)
+# not_modified is False; payload contains the account data; etag is e.g. '"abc123"'
+```
+
+### Subsequent fetch — revalidate with If-None-Match
+
+```python
+payload, etag, not_modified = ba.get_account_cached(enterprise_id=42, etag=etag)
+
+if not_modified:
+    # Server replied 304 — use your local cached copy, nothing to update
+    pass
+else:
+    # Server replied 200 with a fresh payload and possibly a new ETag
+    process(payload)
+```
+
+### Other cached helpers
+
+```python
+# Subscription / payment data
+payload, etag, nm = ba.get_subscription_cached(enterprise_id=42, etag=etag)
+
+# Plan data
+payload, etag, nm = ba.get_plan_cached(enterprise_id=42, etag=etag)
+
+# Plan history (offset + limit forwarded as query params)
+payload, etag, nm = ba.get_plan_history_cached(enterprise_id=42, offset=0, limit=20, etag=etag)
+
+# Account state
+payload, etag, nm = ba.get_account_state_cached(enterprise_id=42, etag=etag)
+
+# Products
+from sendhub.billing_products import BillingProducts
+products, etag, nm = BillingProducts().list_products_cached(etag=etag)
+
+# Prices
+from sendhub.billing_prices import BillingPrices
+prices, etag, nm = BillingPrices().list_prices_cached(etag=etag)
+```
+
+### Low-level transport
+
+For cases not covered by the high-level helpers, `APIRequestor.request()` exposes
+the same primitives directly:
+
+```python
+from sendhub.api_requestor import APIRequestor
+
+req = APIRequestor()
+req.api_base = "https://billing.example.com"
+
+payload, status, headers = req.request(
+    meth="get",
+    url="/api/v2/some-endpoint",
+    extra_headers={"If-None-Match": stored_etag},
+    return_metadata=True,
+)
+
+new_etag = headers.get("ETag")
+not_modified = status == 304
+```
 
 Installation
 -----------------

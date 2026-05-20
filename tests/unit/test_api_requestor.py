@@ -98,7 +98,7 @@ def test_build_url_type_errors():
 @patch("sendhub.api_requestor.LOGGER")
 def test_request_success(mock_logger):
     req = APIRequestor()
-    with patch.object(req, "perform_request", return_value=('{"ok": true}', 200)), \
+    with patch.object(req, "perform_request", return_value=('{"ok": true}', 200, None)), \
          patch.object(req, "interpret_response", return_value={"ok": True}):
         result = req.request("get", "/foo")
         assert result == {"ok": True}
@@ -158,13 +158,13 @@ def test_perform_request_internal_and_external(monkeypatch):
     monkeypatch.setattr("sendhub.api_requestor.USERNAME", "user")
     monkeypatch.setattr("sendhub.api_requestor.PASSWORD", "pass")
     with patch.object(req, "api_url", return_value="http://base/foo"), \
-         patch.object(req, "do_send_request", return_value=('{"ok": true}', 200)), \
+         patch.object(req, "do_send_request", return_value=('{"ok": true}', 200, None)), \
          patch("sendhub.api_requestor.VERSION", "1.0"):
         req.perform_request("get", "foo", {"a": 1})
 
     monkeypatch.setattr("sendhub.api_requestor.INTERNAL_API", False)
     with patch.object(req, "api_url", return_value="http://base/foo"), \
-         patch.object(req, "do_send_request", return_value=('{"ok": true}', 200)), \
+         patch.object(req, "do_send_request", return_value=('{"ok": true}', 200, None)), \
          patch("sendhub.api_requestor.VERSION", "1.0"):
         req.perform_request("get", "foo", {"a": 1})
 
@@ -202,7 +202,7 @@ def test_do_send_request_get(mock_logger, mock_request):
     mock_result.content = b"abc"
     mock_result.status_code = 200
     mock_request.return_value = mock_result
-    content, status = req.do_send_request("get", "url", {}, {"a": 1})
+    content, status, _ = req.do_send_request("get", "url", {}, {"a": 1})
     assert content == b"abc"
     assert status == 200
 
@@ -214,7 +214,7 @@ def test_do_send_request_post(mock_logger, mock_request):
     mock_result.content = b"abc"
     mock_result.status_code = 201
     mock_request.return_value = mock_result
-    content, status = req.do_send_request("post", "url", {}, {"a": 1})
+    content, status, _ = req.do_send_request("post", "url", {}, {"a": 1})
     assert content == b"abc"
     assert status == 201
 
@@ -256,3 +256,147 @@ def test_handle_request_error_other_exception(mock_logger):
     with pytest.raises(APIConnectionError) as e:
         APIRequestor.handle_request_error(exc)
     assert "ValueError" in str(e.value)
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware: interpret_response 304
+# ---------------------------------------------------------------------------
+
+def test_interpret_response_304_returns_none():
+    req = APIRequestor()
+    result = req.interpret_response(b"", 304)
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware: do_send_request extra_headers and return_metadata
+# ---------------------------------------------------------------------------
+
+@patch("sendhub.api_requestor._session")
+@patch("sendhub.api_requestor.LOGGER")
+def test_do_send_request_extra_headers_merged(mock_logger, mock_session):
+    """extra_headers values appear in the headers actually sent."""
+    req = APIRequestor()
+    mock_result = MagicMock()
+    mock_result.content = b'{"ok":true}'
+    mock_result.status_code = 200
+    mock_result.headers = {}
+    mock_session.request.return_value = mock_result
+
+    req.do_send_request(
+        "get", "http://x/", {"Content-Type": "application/json"},
+        {"a": "1"},
+        extra_headers={"If-None-Match": '"abc"'},
+    )
+
+    call_kwargs = mock_session.request.call_args
+    sent_headers = call_kwargs[1]["headers"] if "headers" in call_kwargs[1] else call_kwargs[0][2]
+    assert sent_headers.get("If-None-Match") == '"abc"'
+    # Original header not clobbered
+    assert "Content-Type" in sent_headers
+
+
+@patch("sendhub.api_requestor._session")
+@patch("sendhub.api_requestor.LOGGER")
+def test_do_send_request_return_metadata_includes_headers(mock_logger, mock_session):
+    """return_metadata=True yields a 3-tuple whose third element is response headers."""
+    req = APIRequestor()
+    mock_result = MagicMock()
+    mock_result.content = b'{"ok":true}'
+    mock_result.status_code = 200
+    mock_result.headers = {"ETag": '"v1"', "Content-Type": "application/json"}
+    mock_session.request.return_value = mock_result
+
+    result = req.do_send_request(
+        "get", "http://x/", {}, {"a": "1"}, return_metadata=True
+    )
+
+    assert len(result) == 3
+    content, status, headers = result
+    assert status == 200
+    assert headers["ETag"] == '"v1"'
+
+
+@patch("sendhub.api_requestor._session")
+@patch("sendhub.api_requestor.LOGGER")
+def test_do_send_request_default_returns_3tuple(mock_logger, mock_session):
+    """Without return_metadata, do_send_request returns a 3-tuple with None headers."""
+    req = APIRequestor()
+    mock_result = MagicMock()
+    mock_result.content = b"x"
+    mock_result.status_code = 200
+    mock_session.request.return_value = mock_result
+
+    result = req.do_send_request("get", "http://x/", {}, {"a": "1"})
+    assert len(result) == 3
+    assert result[2] is None
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware: request() return_metadata and extra_headers round-trip
+# ---------------------------------------------------------------------------
+
+@patch("sendhub.api_requestor.USERNAME", "user")
+@patch("sendhub.api_requestor.PASSWORD", "pass")
+@patch("sendhub.api_requestor.LOGGER")
+def test_request_return_metadata_3tuple(mock_logger):
+    """request(return_metadata=True) returns (payload, status_code, headers)."""
+    req = APIRequestor()
+    fake_headers = {"ETag": '"etag1"'}
+    with patch.object(req, "perform_request", return_value=(b'{"x":1}', 200, fake_headers)), \
+         patch.object(req, "interpret_response", return_value={"x": 1}):
+        result = req.request("get", "/foo", return_metadata=True)
+
+    assert isinstance(result, tuple) and len(result) == 3
+    payload, rcode, resp_headers = result
+    assert payload == {"x": 1}
+    assert rcode == 200
+    assert resp_headers["ETag"] == '"etag1"'
+
+
+@patch("sendhub.api_requestor.USERNAME", "user")
+@patch("sendhub.api_requestor.PASSWORD", "pass")
+@patch("sendhub.api_requestor.LOGGER")
+def test_request_304_not_modified(mock_logger):
+    """A 304 response propagates correctly through the metadata path."""
+    req = APIRequestor()
+    fake_headers = {"ETag": '"etag1"'}
+    with patch.object(req, "perform_request", return_value=(b"", 304, fake_headers)), \
+         patch.object(req, "interpret_response", return_value=None):
+        payload, rcode, resp_headers = req.request("get", "/foo", return_metadata=True)
+
+    assert payload is None
+    assert rcode == 304
+    assert resp_headers.get("ETag") == '"etag1"'
+
+
+@patch("sendhub.api_requestor.USERNAME", "user")
+@patch("sendhub.api_requestor.PASSWORD", "pass")
+@patch("sendhub.api_requestor.LOGGER")
+def test_request_backward_compat_no_metadata(mock_logger):
+    """Normal request() (no return_metadata) still returns just the payload."""
+    req = APIRequestor()
+    with patch.object(req, "perform_request", return_value=(b'{"ok":true}', 200, None)), \
+         patch.object(req, "interpret_response", return_value={"ok": True}):
+        result = req.request("get", "/foo")
+
+    assert result == {"ok": True}
+
+
+@patch("sendhub.api_requestor.USERNAME", "user")
+@patch("sendhub.api_requestor.PASSWORD", "pass")
+@patch("sendhub.api_requestor.LOGGER")
+def test_request_extra_headers_forwarded(mock_logger):
+    """extra_headers are forwarded to perform_request."""
+    req = APIRequestor()
+    captured = {}
+
+    def fake_perform(meth, url, params, extra_headers=None, return_metadata=False):
+        captured["extra_headers"] = extra_headers
+        return b'{"ok":true}', 200, None
+
+    with patch.object(req, "perform_request", side_effect=fake_perform), \
+         patch.object(req, "interpret_response", return_value={"ok": True}):
+        req.request("get", "/foo", extra_headers={"X-Custom": "val"})
+
+    assert captured["extra_headers"] == {"X-Custom": "val"}

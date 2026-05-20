@@ -179,3 +179,44 @@ def test_delete_product_failure(mock_api_requestor, billing_products):
     mock_instance.request.side_effect = Exception("fail")
     with pytest.raises(Exception):
         billing_products.delete_product(123)
+
+
+# ---------------------------------------------------------------------------
+# Cache-aware: list_products_cached
+# ---------------------------------------------------------------------------
+
+@patch("sendhub.billing_products.APIRequestor")
+def test_list_products_cached_200(mock_api_requestor, billing_products):
+    """list_products_cached returns (products, etag, False) on 200."""
+    mock_instance = mock_api_requestor.return_value
+    products = [{"id": 1}, {"id": 2}]
+    mock_instance.request.return_value = (products, 200, {"ETag": '"prod-v1"'})
+    result, etag, not_modified = billing_products.list_products_cached(with_hidden=True, active_status="all")
+    assert result == products
+    assert etag == '"prod-v1"'
+    assert not_modified is False
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs.get("extra_headers") is None  # no etag → no header
+    assert call_kwargs["return_metadata"] is True
+
+
+@patch("sendhub.billing_products.APIRequestor")
+def test_list_products_cached_304(mock_api_requestor, billing_products):
+    """list_products_cached returns (None, etag, True) on 304."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = (None, 304, {"ETag": '"prod-v1"'})
+    result, etag, not_modified = billing_products.list_products_cached(etag='"prod-v1"')
+    assert result is None
+    assert not_modified is True
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs["extra_headers"] == {"If-None-Match": '"prod-v1"'}
+
+
+@patch("sendhub.billing_products.APIRequestor")
+def test_list_products_cached_passes_filters(mock_api_requestor, billing_products):
+    """with_hidden and active_status are forwarded as query params."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = ([], 200, {})
+    billing_products.list_products_cached(with_hidden=False, active_status="active")
+    call_kwargs = mock_instance.request.call_args[1]
+    assert call_kwargs["params"] == {"with_hidden": "0", "active_status": "active"}

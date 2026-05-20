@@ -21,7 +21,7 @@ def get_version() -> str:
         )
         # Accept: 0.26.01  |  VERSION=0.26.01  |  VERSION="0.26.01"
         m: Optional[re.Match[str]] = re.search(
-            r'^\s*(?:VERSION\s*=\s*)?["\']?([0-9]+(?:\.[0-9]+)*)["\']?\s*$', raw
+            r'^\s*(?:VERSION\s*=\s*)?["\']?(\d+(?:\.\d+)*)["\']?\s*$', raw
         )
         if not m:
             raise RuntimeError(f"VERSION file malformed: {raw!r}")

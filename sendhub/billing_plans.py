@@ -4,6 +4,8 @@ from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
 from sendhub.constants import BILLING_BASE
 
+_PLAN_ID_NONE = "plan_id must not be None"
+
 
 class BillingPlans(APIResource):
     """Class representing Billing Plans"""
@@ -24,7 +26,7 @@ class BillingPlans(APIResource):
     def get_plan(self, plan_id: Any) -> Any:
         """Get a plan by ID."""
         if plan_id is None:
-            raise ValueError("plan_id must not be None")
+            raise ValueError(_PLAN_ID_NONE)
         return self.get_object(plan_id)
 
     def create_plan(
@@ -87,13 +89,13 @@ class BillingPlans(APIResource):
     def update_plan(self, plan_id: Any, active: bool) -> Any:
         """Update the plan."""
         if plan_id is None:
-            raise ValueError("plan_id must not be None")
+            raise ValueError(_PLAN_ID_NONE)
         return self.update_object(obj_id=plan_id, id=plan_id, active=active)
 
     def delete_plan(self, plan_id: Any) -> None:
         """Delete a plan."""
         if plan_id is None:
-            raise ValueError("plan_id must not be None")
+            raise ValueError(_PLAN_ID_NONE)
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
         url = self.instance_url(str(plan_id))
