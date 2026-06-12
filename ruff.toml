@@ -1,0 +1,40 @@
+line-length = 200
+target-version = "py313"
+src = ["sendhub"]
+
+[lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "W",   # warnings
+    "I",   # import sorting
+
+    "UP",  # Python 3.x modernization (critical for your migration)
+    "B",   # bugbear (real bug detection)
+    "C4",  # better comprehensions
+    "A",   # builtins shadowing
+
+    "DTZ", # datetime issues (your Phase 1 work)
+]
+
+ignore = [
+    "E501",  # handled by formatter
+]
+
+fixable = ["ALL"]
+
+[lint.per-file-ignores]
+"sitecustomize.py" = ["E402"]
+"wsgi.py" = ["E402"]
+"docs/conf.py" = ["E402"]
+
+# Tests: reduce noise, but keep useful signals
+"tests/**" = [
+    "F841",   # unused variables
+    "DTZ",    # allow naive datetime in tests
+]
+
+[format]
+quote-style = "double"   # or "single"
+indent-style = "space"
+line-ending = "auto"

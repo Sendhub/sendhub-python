@@ -1,4 +1,3 @@
-import pytest
 
 from sendhub.sendhub_error import (
     APIConnectionError,

@@ -1,4 +1,3 @@
-from typing import Optional
 
 
 class SendHubError(Exception):
@@ -14,10 +13,10 @@ class SendHubError(Exception):
 
     def __init__(
         self,
-        message: Optional[str] = None,
-        dev_message: Optional[str] = None,
-        code: Optional[int] = None,
-        more_info: Optional[str] = None,
+        message: str | None = None,
+        dev_message: str | None = None,
+        code: int | None = None,
+        more_info: str | None = None,
     ) -> None:
         super().__init__(message)
         self.dev_message: str = dev_message if dev_message is not None else ""
@@ -43,9 +42,9 @@ class EntitlementError(SendHubError):
     def __init__(
         self,
         message: str,
-        dev_message: Optional[str] = None,
-        code: Optional[int] = None,
-        more_info: Optional[str] = None,
+        dev_message: str | None = None,
+        code: int | None = None,
+        more_info: str | None = None,
     ) -> None:
         super().__init__(message, dev_message, code, more_info)
 
@@ -56,9 +55,9 @@ class InvalidRequestError(SendHubError):
     def __init__(
         self,
         message: str,
-        dev_message: Optional[str] = None,
-        code: Optional[int] = None,
-        more_info: Optional[str] = None,
+        dev_message: str | None = None,
+        code: int | None = None,
+        more_info: str | None = None,
     ) -> None:
         super().__init__(message, dev_message, code, more_info)
 
@@ -69,9 +68,9 @@ class TryAgainLaterError(SendHubError):
     def __init__(
         self,
         message: str,
-        dev_message: Optional[str] = None,
-        code: Optional[int] = None,
-        more_info: Optional[str] = None,
+        dev_message: str | None = None,
+        code: int | None = None,
+        more_info: str | None = None,
     ) -> None:
         super().__init__(message, dev_message, code, more_info)
 

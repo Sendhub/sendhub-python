@@ -3,7 +3,7 @@ import json
 import platform
 import textwrap
 import urllib.parse
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -43,7 +43,7 @@ class APIRequestor:
     Network Transport class for handling API requests.
     """
 
-    api_base: Optional[str] = None
+    api_base: str | None = None
 
     def api_url(self, url: str = "") -> str:
         """
@@ -84,7 +84,7 @@ class APIRequestor:
         return ",".join(map(str, listvalue))
 
     @classmethod
-    def _encode_inner(cls, _d: Dict[str, Any]) -> Dict[str, Any]:
+    def _encode_inner(cls, _d: dict[str, Any]) -> dict[str, Any]:
         """
         Special case value encoding for lists and datetimes.
         """
@@ -94,7 +94,7 @@ class APIRequestor:
             list: cls.encode_list,
             datetime.datetime: cls.encode_datetime,
         }
-        stk: Dict[str, Any] = {}
+        stk: dict[str, Any] = {}
         for key, value in _d.items():
             key = cls.utf8(key)
             try:
@@ -106,14 +106,14 @@ class APIRequestor:
         return stk
 
     @classmethod
-    def encode(cls, _d: Dict[str, Any]) -> str:
+    def encode(cls, _d: dict[str, Any]) -> str:
         """
         Encode a dictionary for URL representation.
         """
         return urllib.parse.urlencode(cls._encode_inner(_d))
 
     @classmethod
-    def encode_json(cls, _d: Dict[str, Any]) -> str:
+    def encode_json(cls, _d: dict[str, Any]) -> str:
         """
         Encode a dictionary as a JSON string.
         """
@@ -121,7 +121,7 @@ class APIRequestor:
 
     @classmethod
     def build_url(
-        cls, url: str, params: Dict[str, Any], auth_params_only: bool = False
+        cls, url: str, params: dict[str, Any], auth_params_only: bool = False
     ) -> str:
         """
         Build a URL with query parameters.
@@ -153,8 +153,8 @@ class APIRequestor:
         self,
         meth: str,
         url: str,
-        params: Optional[dict] = None,
-        extra_headers: Optional[Dict[str, str]] = None,
+        params: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
         return_metadata: bool = False,
     ) -> Any:
         """Handles requests.
@@ -179,7 +179,7 @@ class APIRequestor:
             raise TypeError("params must be a dict or None")
 
         resp: list = []
-        _meta: list[tuple[int, Dict[str, str]]] = []
+        _meta: list[tuple[int, dict[str, str]]] = []
         params = (
             params if params else {"apiUsername": USERNAME, "apiPassword": PASSWORD}
         )

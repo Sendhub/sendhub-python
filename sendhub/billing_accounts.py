@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -34,7 +34,7 @@ class BillingAccount(APIResource):
         """
         return self.get_object(enterprise_id)
 
-    def _billing_request(self, meth: str, url: str, params: Optional[dict] = None) -> object:
+    def _billing_request(self, meth: str, url: str, params: dict | None = None) -> object:
         """Issue a request against the billing service."""
 
         requestor = APIRequestor()
@@ -45,9 +45,9 @@ class BillingAccount(APIResource):
         self,
         meth: str,
         url: str,
-        params: Optional[dict] = None,
-        etag: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        params: dict | None = None,
+        etag: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware variant of :meth:`_billing_request`.
 
         Sends ``If-None-Match: <etag>`` when *etag* is supplied.  Returns a
@@ -66,12 +66,12 @@ class BillingAccount(APIResource):
             extra_headers=extra_headers or None,
             return_metadata=True,
         )
-        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        new_etag: str | None = resp_headers.get("ETag") or resp_headers.get("etag")
         not_modified = rcode == 304
         return payload, new_etag, not_modified
 
     @staticmethod
-    def _setup_intents_url(intent_id: Optional[str] = None) -> str:
+    def _setup_intents_url(intent_id: str | None = None) -> str:
         """Build the setup-intent endpoint path."""
 
         base_url = "/api/v2/setup-intents"
@@ -86,7 +86,7 @@ class BillingAccount(APIResource):
         return f"/api/v2/account-state/{customer_id}"
 
     @staticmethod
-    def _extract_customer_id(account: object) -> Optional[str]:
+    def _extract_customer_id(account: object) -> str | None:
         """Read a customer id from either a dict or SendHubObject-style response."""
 
         getter = getattr(account, "get", None)
@@ -118,7 +118,7 @@ class BillingAccount(APIResource):
         billing_email: str,
         plan_id: int,
         count: int,
-        customer_id: Optional[str] = None,
+        customer_id: str | None = None,
     ) -> object:
         """
         Creates a new billing account.
@@ -145,8 +145,8 @@ class BillingAccount(APIResource):
     def create_setup_intent(
         self,
         enterprise_id: int,
-        payment_method_types: Optional[list[str]] = None,
-        correlation_id: Optional[str] = None,
+        payment_method_types: list[str] | None = None,
+        correlation_id: str | None = None,
     ) -> object:
         """Create a Stripe SetupIntent for the billing account's customer."""
 
@@ -165,8 +165,8 @@ class BillingAccount(APIResource):
     def get_setup_intent(
         self,
         intent_id: str,
-        enterprise_id: Optional[int] = None,
-        correlation_id: Optional[str] = None,
+        enterprise_id: int | None = None,
+        correlation_id: str | None = None,
     ) -> object:
         """Retrieve a Stripe SetupIntent without exposing bridge routing details to callers."""
 
@@ -185,7 +185,7 @@ class BillingAccount(APIResource):
     def get_account_state(
         self,
         enterprise_id: int,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> object:
         """Retrieve the Stripe-derived account state for a billing account."""
 
@@ -220,11 +220,11 @@ class BillingAccount(APIResource):
     def update_account(
         self,
         enterprise_id: int,
-        name: Optional[str] = None,
-        plan_id: Optional[int] = None,
-        subscription_count: Optional[int] = None,
-        plan_change_strategy: Optional[str] = None,
-        billing_email: Optional[str] = None,
+        name: str | None = None,
+        plan_id: int | None = None,
+        subscription_count: int | None = None,
+        plan_change_strategy: str | None = None,
+        billing_email: str | None = None,
     ) -> object:
         """
         Updates a billing account.
@@ -256,7 +256,7 @@ class BillingAccount(APIResource):
         self,
         enterprise_id: int,
         plan_id: int,
-        plan_change_strategy: Optional[str] = None,
+        plan_change_strategy: str | None = None,
     ) -> object:
         """
         Changes the plan for a billing account.
@@ -342,6 +342,60 @@ class BillingAccount(APIResource):
 
         return response
 
+    def get_balance(self, enterprise_id):
+        """Retrieve the current customer balance for the given enterprise."""
+        return self._billing_request(
+            "get",
+            f"{self.instance_url(str(enterprise_id))}/balance",
+        )
+
+    def list_balance_transactions(self, enterprise_id, limit=10, offset=0):
+        """List customer balance transactions for the given enterprise."""
+        return self._billing_request(
+            "get",
+            f"{self.instance_url(str(enterprise_id))}/balance/transactions",
+            {"limit": limit, "offset": offset},
+        )
+
+    def refund(self, enterprise_id, charge_id, amount=None, reason=None, admin_user=None):
+        """Issue a full or partial refund for a charge via the billing bridge."""
+        payload = {"charge_id": charge_id}
+        if amount is not None:
+            payload["amount"] = int(amount)
+        if reason:
+            payload["reason"] = reason
+        if admin_user:
+            payload["adminUser"] = admin_user
+
+        return self._billing_request(
+            "post",
+            f"{self.instance_url(str(enterprise_id))}/refund",
+            payload,
+        )
+
+    def list_entitlement_adjustments(self, enterprise_id):
+        """List entitlement adjustments for the given enterprise."""
+        return self._billing_request(
+            "get",
+            f"{self.instance_url(str(enterprise_id))}/entitlements/adjust",
+        )
+
+    def grant_entitlement_adjustment(self, enterprise_id, data):
+        """Grant an entitlement adjustment for the given enterprise."""
+        return self._billing_request(
+            "post",
+            f"{self.instance_url(str(enterprise_id))}/entitlements/adjust",
+            data,
+        )
+
+    def revoke_entitlement_adjustment(self, enterprise_id, adjustment_id, data=None):
+        """Revoke an entitlement adjustment for the given enterprise."""
+        return self._billing_request(
+            "delete",
+            f"{self.instance_url(str(enterprise_id))}/entitlements/adjust/{adjustment_id}",
+            data,
+        )
+
     def get_plan_data(self, enterprise_id):
         """To get the plan data"""
         requestor = APIRequestor()
@@ -418,8 +472,8 @@ class BillingAccount(APIResource):
     def get_account_cached(
         self,
         enterprise_id: int,
-        etag: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware retrieval of a billing account.
 
         Returns ``(payload, new_etag, not_modified)``.
@@ -430,8 +484,8 @@ class BillingAccount(APIResource):
     def get_subscription_cached(
         self,
         enterprise_id: int,
-        etag: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware retrieval of subscription (payment) data.
 
         Returns ``(payload, new_etag, not_modified)``.
@@ -442,8 +496,8 @@ class BillingAccount(APIResource):
     def get_plan_cached(
         self,
         enterprise_id: int,
-        etag: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware retrieval of plan data.
 
         Returns ``(payload, new_etag, not_modified)``.
@@ -456,8 +510,8 @@ class BillingAccount(APIResource):
         enterprise_id: int,
         offset: int,
         limit: int,
-        etag: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware retrieval of plan history.
 
         Returns ``(payload, new_etag, not_modified)``.
@@ -470,9 +524,9 @@ class BillingAccount(APIResource):
     def get_account_state_cached(
         self,
         enterprise_id: int,
-        etag: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        etag: str | None = None,
+        correlation_id: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware retrieval of Stripe-derived account state.
 
         Returns ``(payload, new_etag, not_modified)``.

@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from sendhub.profile import Profile
+
 
 class DummyProfile(Profile):
     def instance_url(self, user_id):

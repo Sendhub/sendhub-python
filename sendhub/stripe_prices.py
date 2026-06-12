@@ -1,4 +1,3 @@
-from typing import Optional
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -14,7 +13,7 @@ class StripePrice(APIResource):
     def get_base_url() -> str:
         return BILLING_BASE
 
-    def get_price(self, price_id: str, expand: Optional[str] = None) -> "StripePrice":
+    def get_price(self, price_id: str, expand: str | None = None) -> "StripePrice":
         """Retrieve a Stripe price by its ID.
 
         Args:

@@ -1,4 +1,3 @@
-from typing import Optional
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -13,7 +12,7 @@ class StripeCustomer(APIResource):
         return BILLING_BASE
 
     def get_customer(
-        self, customer_id: str, expand: Optional[str] = None
+        self, customer_id: str, expand: str | None = None
     ) -> "StripeCustomer":
         """Retrieve a Stripe customer by its ID.
 

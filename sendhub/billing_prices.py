@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, TypeAlias
+from typing import TypeAlias
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -63,7 +63,7 @@ class BillingPrices(APIResource):
         currency: str,
         productId: int,
         interval: str,
-        priceMetadata: Optional[CustomDict] = None,
+        priceMetadata: CustomDict | None = None,
     ) -> object:
         """
         Creates a new billing price.
@@ -139,8 +139,8 @@ class BillingPrices(APIResource):
         self,
         with_hidden: bool = True,
         active_status: str = "all",
-        etag: Optional[str] = None,
-    ) -> Tuple[Optional[object], Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[object | None, str | None, bool]:
         """Cache-aware price list read.
 
         Sends ``If-None-Match: <etag>`` when *etag* is supplied.  Returns a
@@ -162,7 +162,7 @@ class BillingPrices(APIResource):
             extra_headers=extra_headers or None,
             return_metadata=True,
         )
-        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        new_etag: str | None = resp_headers.get("ETag") or resp_headers.get("etag")
         not_modified = rcode == 304
         if not not_modified and payload is not None:
             return payload, new_etag, not_modified

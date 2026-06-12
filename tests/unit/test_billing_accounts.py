@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from sendhub.billing_accounts import BillingAccount
 
 
@@ -347,3 +346,129 @@ def test_get_account_state_cached_304(mock_api_requestor, mock_get_account, bill
     )
     assert payload is None
     assert not_modified is True
+
+
+# ---------------------------------------------------------------------------
+# Billing bridge gap-fill helpers
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def real_billing_account():
+    return BillingAccount()
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_refund_posts_charge_payload(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "re_123"}
+
+    result = real_billing_account.refund(
+        12,
+        "ch_123",
+        amount="2500",
+        reason="requested_by_customer",
+        admin_user="admin@example.com",
+    )
+
+    assert result == {"id": "re_123"}
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/accounts/12/refund",
+        {
+            "charge_id": "ch_123",
+            "amount": 2500,
+            "reason": "requested_by_customer",
+            "adminUser": "admin@example.com",
+        },
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_refund_omits_optional_fields(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "re_123"}
+
+    real_billing_account.refund(12, "ch_123")
+
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/accounts/12/refund",
+        {"charge_id": "ch_123"},
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_get_balance(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"balance": -500}
+
+    result = real_billing_account.get_balance(12)
+
+    assert result == {"balance": -500}
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/accounts/12/balance",
+        None,
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_list_balance_transactions(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = [{"id": "cbtxn_123"}]
+
+    result = real_billing_account.list_balance_transactions(12, limit=25, offset=50)
+
+    assert result == [{"id": "cbtxn_123"}]
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/accounts/12/balance/transactions",
+        {"limit": 25, "offset": 50},
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_list_entitlement_adjustments(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = [{"id": 1}]
+
+    result = real_billing_account.list_entitlement_adjustments(12)
+
+    assert result == [{"id": 1}]
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/accounts/12/entitlements/adjust",
+        None,
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_grant_entitlement_adjustment(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": 1}
+    payload = {"entitlement": "sms", "delta": 100}
+
+    result = real_billing_account.grant_entitlement_adjustment(12, payload)
+
+    assert result == {"id": 1}
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/accounts/12/entitlements/adjust",
+        payload,
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_revoke_entitlement_adjustment(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"deleted": True}
+    payload = {"reason": "expired"}
+
+    result = real_billing_account.revoke_entitlement_adjustment(12, 34, payload)
+
+    assert result == {"deleted": True}
+    mock_instance.request.assert_called_once_with(
+        "delete",
+        "/api/v2/accounts/12/entitlements/adjust/34",
+        payload,
+    )

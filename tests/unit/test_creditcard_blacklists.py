@@ -1,9 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-
 from sendhub.creditcard_blacklists import CreditCardBlacklist
-from sendhub.sendhub_object import SendHubObject
 
 
 class DummyCreditCardBlacklist(CreditCardBlacklist):

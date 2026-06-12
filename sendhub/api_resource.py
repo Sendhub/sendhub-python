@@ -1,5 +1,5 @@
 import urllib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.constants import API_BASE
@@ -29,7 +29,7 @@ class APIResource(SendHubObject):
         self._id = obj_id
         return self
 
-    def get_list(self, **params: Any) -> List[SendHubObject]:
+    def get_list(self, **params: Any) -> list[SendHubObject]:
         """To get the list"""
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
@@ -57,7 +57,7 @@ class APIResource(SendHubObject):
         self._id = obj_id
         return self
 
-    def instance_url(self, _id: Optional[Any] = None) -> str:
+    def instance_url(self, _id: Any | None = None) -> str:
         """To get the instance url"""
         _id = self.get("id") if _id is None else _id
         if not _id:
@@ -80,8 +80,8 @@ class APIResource(SendHubObject):
     def get_cached(
         self,
         obj_id: Any,
-        etag: Optional[str] = None,
-    ) -> Tuple[Any, Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[Any, str | None, bool]:
         """Cache-aware GET for a single resource.
 
         Sends ``If-None-Match: <etag>`` when *etag* is provided.  Returns a
@@ -96,7 +96,7 @@ class APIResource(SendHubObject):
         """
         if obj_id is None:
             raise ValueError(_OBJ_ID_NONE)
-        extra_headers: Dict[str, str] = {}
+        extra_headers: dict[str, str] = {}
         if etag:
             extra_headers["If-None-Match"] = etag
         requestor = APIRequestor()
@@ -108,7 +108,7 @@ class APIResource(SendHubObject):
             extra_headers=extra_headers or None,
             return_metadata=True,
         )
-        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        new_etag: str | None = resp_headers.get("ETag") or resp_headers.get("etag")
         not_modified = rcode == 304
         if not not_modified and payload is not None:
             self.refresh_from(payload)
@@ -117,9 +117,9 @@ class APIResource(SendHubObject):
 
     def get_list_cached(
         self,
-        etag: Optional[str] = None,
+        etag: str | None = None,
         **params: Any,
-    ) -> Tuple[Optional[List[SendHubObject]], Optional[str], bool]:
+    ) -> tuple[list[SendHubObject] | None, str | None, bool]:
         """Cache-aware list GET.
 
         Sends ``If-None-Match: <etag>`` when *etag* is provided.  Returns a
@@ -130,7 +130,7 @@ class APIResource(SendHubObject):
         * ``new_etag`` – value of the ``ETag`` response header, or ``None``.
         * ``not_modified`` – ``True`` when the server replied with ``304``.
         """
-        extra_headers: Dict[str, str] = {}
+        extra_headers: dict[str, str] = {}
         if etag:
             extra_headers["If-None-Match"] = etag
         requestor = APIRequestor()
@@ -142,7 +142,7 @@ class APIResource(SendHubObject):
             extra_headers=extra_headers or None,
             return_metadata=True,
         )
-        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        new_etag: str | None = resp_headers.get("ETag") or resp_headers.get("etag")
         not_modified = rcode == 304
         if not not_modified and payload is not None:
             return [SendHubObject.construct_from(i) for i in payload], new_etag, not_modified

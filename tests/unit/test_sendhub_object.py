@@ -1,9 +1,7 @@
 import json
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-
 from sendhub.sendhub_object import SendHubObject, SendHubObjectEncoder
 
 
@@ -54,6 +52,15 @@ def test_getattr_missing():
     obj = SendHubObject()
     assert getattr(obj, "missing", None) is None
 
+
+def test_repr_includes_object_and_id_markers():
+    obj = SendHubObject()
+    obj["object"] = "entitlement"
+    obj["id"] = "obj_123"
+    rendered = repr(obj)
+    assert "self.get('object').encode('utf8')" in rendered
+    assert "id={self.get('id').encode('utf8')}" in rendered
+
 @patch("sendhub.sendhub_object.camel_to_snake", side_effect=dummy_camel_to_snake)
 @patch("sendhub.sendhub_object.convert_to_sendhub_object", side_effect=dummy_convert_to_sendhub_object)
 def test_construct_from_and_refresh_from(mock_convert, mock_camel):
@@ -84,6 +91,20 @@ def test_to_dict_and_str_repr():
     assert "SendHubObject" in r
     assert "JSON:" in r
 
+
+def test_to_dict_serializes_nested_objects_and_skips_internal_id():
+    parent = SendHubObject()
+    child = SendHubObject()
+    child["name"] = "nested"
+    parent["_id"] = "internal-only"
+    parent["child"] = child
+    parent["items"] = [child, 2]
+
+    assert parent.to_dict() == {
+        "child": {"name": "nested"},
+        "items": [{"name": "nested"}, 2],
+    }
+
 def test_encoder_with_sendhub_object():
     obj = SendHubObject()
     obj["x"] = 1
@@ -94,3 +115,9 @@ def test_encoder_with_non_sendhub_object():
     data = {"a": 1}
     encoded = json.dumps(data, cls=SendHubObjectEncoder)
     assert '"a": 1' in encoded
+
+
+def test_encoder_default_non_sendhub_object_raises_type_error():
+    encoder = SendHubObjectEncoder()
+    with pytest.raises(TypeError):
+        encoder.default(object())

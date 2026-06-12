@@ -1,5 +1,4 @@
 import pytest
-
 from sendhub.enterprises import Enterprise
 
 

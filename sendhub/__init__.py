@@ -24,7 +24,7 @@ _MOD_UTILS = ".utils"
 # -------------------------
 
 # Lazy import map: public name -> relative module path (attribute name == key)
-_LAZY_IMPORTS: Dict[str, str] = {
+_LAZY_IMPORTS: dict[str, str] = {
     "APIRequestor": ".api_requestor",
     "APIResource": ".api_resource",
     "BillingAccount": ".billing_accounts",
@@ -32,6 +32,7 @@ _LAZY_IMPORTS: Dict[str, str] = {
     "BillingPrices": ".billing_prices",
     "BillingProducts": ".billing_products",
     "Coupon": ".coupons",
+    "CreditNote": ".credit_notes",
     "CreditCardBlacklist": ".creditcard_blacklists",
     "Enterprise": ".enterprises",
     "Entitlement": ".entitlements",
@@ -62,7 +63,7 @@ _LAZY_IMPORTS: Dict[str, str] = {
 # Prefer to auto-detect uppercase names from constants, but fall back to a minimal set.
 try:
     _const_mod = importlib.import_module(__name__ + _MOD_CONSTANTS)
-    _SYNC_TO_CONSTANTS: Set[str] = {
+    _SYNC_TO_CONSTANTS: set[str] = {
         name for name in dir(_const_mod) if name.isupper() or name.startswith("_UNDERSCORER")
     }
     ENVIRONMENT_DETAIL = os.getenv('ENVIRONMENT_DETAIL', 'development')
@@ -192,6 +193,7 @@ mod.__dict__["__all__"] = [
     "BillingPlans",
     "BillingPrices",
     "BillingProducts",
+    "CreditNote",
     "CreditCardBlacklist",
     "Enterprise",
     "Entitlement",

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -13,8 +13,8 @@ class StripeSubscription(APIResource):
         return BILLING_BASE
 
     def get_subscriptions(
-        self, customer_id: str, expand: Optional[str] = None
-    ) -> List[object]:
+        self, customer_id: str, expand: str | None = None
+    ) -> list[object]:
         """List Stripe subscriptions for a customer.
 
         Args:
@@ -36,8 +36,8 @@ class StripeSubscription(APIResource):
     def update_subscription(
         self,
         subscription_id: str,
-        new_price_id: Optional[str] = None,
-        quantity: Optional[int] = None,
+        new_price_id: str | None = None,
+        quantity: int | None = None,
         cancel: bool = False,
         correlation_id: str = "",
     ) -> "StripeSubscription":

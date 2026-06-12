@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from sendhub.stripe_prices import StripePrice
 
 

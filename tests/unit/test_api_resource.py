@@ -1,10 +1,8 @@
 from unittest.mock import patch
 
 import pytest
-
 from sendhub.api_resource import APIResource
 from sendhub.sendhub_error import InvalidRequestError
-from sendhub.sendhub_object import SendHubObject
 
 
 class DummyResource(APIResource):

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sendhub import camel_to_snake, convert_to_sendhub_object
 
@@ -7,7 +7,7 @@ from sendhub import camel_to_snake, convert_to_sendhub_object
 class SendHubObject:
     """Class to make SendHub object"""
 
-    def __init__(self, _id: Optional[Any] = None, **_params: Any) -> None:
+    def __init__(self, _id: Any | None = None, **_params: Any) -> None:
         self.__dict__["_values"] = set()
         self._id = ""
 
@@ -47,14 +47,14 @@ class SendHubObject:
             self.to_dict(), sort_keys=True, indent=2, cls=SendHubObjectEncoder
         )
 
-    def get(self, k: str, default: Optional[Any] = None) -> Any:
+    def get(self, k: str, default: Any | None = None) -> Any:
         """Get object value"""
         try:
             return self[k]
         except KeyError:
             return default
 
-    def setdefault(self, k: str, default: Optional[Any] = None) -> Any:
+    def setdefault(self, k: str, default: Any | None = None) -> Any:
         """Sets the default value if key does not exist"""
         try:
             return self[k]
@@ -62,16 +62,16 @@ class SendHubObject:
             self[k] = default
             return default
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         """Returns keys"""
         return list(self.to_dict().keys())
 
-    def values(self) -> List[Any]:
+    def values(self) -> list[Any]:
         """Returns values"""
         return list(self.to_dict().values())
 
     @classmethod
-    def construct_from(cls, values: Dict[str, Any]) -> "SendHubObject":
+    def construct_from(cls, values: dict[str, Any]) -> "SendHubObject":
         """Class method for constructing the dict"""
         if not isinstance(values, dict):
             raise TypeError("values must be a dict")
@@ -79,7 +79,7 @@ class SendHubObject:
         instance.refresh_from(values)
         return instance
 
-    def refresh_from(self, values: Dict[str, Any]) -> None:
+    def refresh_from(self, values: dict[str, Any]) -> None:
         """refresh from dict"""
         if not isinstance(values, dict):
             raise TypeError("values must be a dict")
@@ -88,7 +88,7 @@ class SendHubObject:
             self.__dict__[name] = convert_to_sendhub_object(val)
             self._values.add(name)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts obj as dict, excluding '_id' key."""
 
         def _serialize(_o: Any) -> Any:
@@ -98,7 +98,7 @@ class SendHubObject:
                 return [_serialize(i) for i in _o]
             return _o
 
-        _d: Dict[str, Any] = {}
+        _d: dict[str, Any] = {}
         for k in sorted(self._values):
             if k == "_id":
                 continue

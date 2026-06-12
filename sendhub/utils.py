@@ -1,5 +1,6 @@
 import time as _time
-from typing import Any, Callable, Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from sendhub.constants import __UNDERSCORER2, _UNDERSCORER1
 
@@ -38,9 +39,9 @@ def retry(
     tries: int,
     delay: int = 3,
     backoff: int = 2,
-    desired_outcome: Union[Any, Callable[[Any], bool]] = True,
-    _fail_value: Optional[Any] = None,
-) -> Callable[[Callable[..., T]], Callable[..., Union[T, bool]]]:
+    desired_outcome: Any | Callable[[Any], bool] = True,
+    _fail_value: Any | None = None,
+) -> Callable[[Callable[..., T]], Callable[..., T | bool]]:
     """
     Retry decorator with exponential backoff
     Retries a function or method until it produces a desired outcome.
@@ -65,10 +66,10 @@ def retry(
         raise ValueError("backoff must be an integer > 1")
 
 
-    def wrapped_retry(_fn: Callable[..., T]) -> Callable[..., Union[T, bool]]:
+    def wrapped_retry(_fn: Callable[..., T]) -> Callable[..., T | bool]:
         """Decorative wrapper."""
 
-        def retry_fn(*args, **kwargs) -> Union[T, bool]:
+        def retry_fn(*args, **kwargs) -> T | bool:
             mtries, mdelay = tries, delay
             attempt = 1
 

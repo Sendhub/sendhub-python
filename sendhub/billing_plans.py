@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -17,7 +17,7 @@ class BillingPlans(APIResource):
 
     def list_plans(
         self, with_hidden: bool = True, active_status: str = "all"
-    ) -> List[Any]:
+    ) -> list[Any]:
         """List the plans."""
         return self.get_list(
             with_hidden="1" if with_hidden else "0", active_status=active_status

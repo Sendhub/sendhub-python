@@ -4,7 +4,6 @@ Module to provide the package version from the VERSION file.
 
 import re
 from pathlib import Path
-from typing import Optional
 
 
 def get_version() -> str:
@@ -20,7 +19,7 @@ def get_version() -> str:
             Path(__file__).with_name("VERSION").read_text(encoding="utf-8").strip()
         )
         # Accept: 0.26.01  |  VERSION=0.26.01  |  VERSION="0.26.01"
-        m: Optional[re.Match[str]] = re.search(
+        m: re.Match[str] | None = re.search(
             r'^\s*(?:VERSION\s*=\s*)?["\']?(\d+(?:\.\d+)*)["\']?\s*$', raw
         )
         if not m:

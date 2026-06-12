@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Any, List
+from typing import Any
 
 # Local imports
 from sendhub.api_requestor import APIRequestor
@@ -16,7 +16,7 @@ class CreditCardBlacklist(APIResource):
         """Return the base URL."""
         return BILLING_BASE
 
-    def list_blacklist(self, search_query: Any = None) -> List[SendHubObject]:
+    def list_blacklist(self, search_query: Any = None) -> list[SendHubObject]:
         """List the blacklist items."""
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()

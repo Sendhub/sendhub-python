@@ -1,8 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-
-from sendhub.entitlements import Entitlement
+from sendhub.entitlements import Entitlement, EntitlementV2
 from sendhub.sendhub_error import AuthorizationError, EntitlementError, InvalidRequestError
 
 
@@ -16,6 +15,19 @@ class DummyEntitlement(Entitlement):
 @pytest.fixture
 def entitlement():
     return DummyEntitlement()
+
+
+class DummyEntitlementV2(EntitlementV2):
+    def instance_url(self, val):
+        return f"/entitlements-v2/{val}"
+
+    def refresh_from(self, response):
+        self._refreshed = response
+
+
+@pytest.fixture
+def entitlement_v2():
+    return DummyEntitlementV2()
 
 def test_get_base_url():
     assert Entitlement.get_base_url() == Entitlement.get_base_url()
@@ -139,3 +151,89 @@ def test_reset_all_failure(mock_api_requestor, entitlement):
     mock_instance.request.side_effect = Exception("fail")
     with pytest.raises(RuntimeError):
         entitlement.reset_all(123)
+
+
+def test_entitlement_v2_get_base_url():
+    assert EntitlementV2.get_base_url() == EntitlementV2.get_base_url()
+
+
+def test_entitlement_v2_class_url():
+    assert EntitlementV2.class_url() == "/api/v2/entitlements"
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_list_usage_success(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"usage": "data"}
+    result = entitlement_v2.list_usage(123)
+    assert result is entitlement_v2
+    assert hasattr(result, "_refreshed")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_list_usage_failure(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.side_effect = Exception("fail")
+    with pytest.raises(RuntimeError):
+        entitlement_v2.list_usage(123)
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_list_limits(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"limits": "data"}
+    result = entitlement_v2.list_limits(123)
+    assert result is entitlement_v2
+    assert hasattr(result, "_refreshed")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_check(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"check": "data"}
+    result = entitlement_v2.check(123, 456, "send_sms", region="us")
+    assert result is entitlement_v2
+    assert hasattr(result, "_refreshed")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_update_success(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"updated": True}
+    result = entitlement_v2.update(123, 456, "send_sms", region="us")
+    assert result is entitlement_v2
+    assert hasattr(result, "_refreshed")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_update_auth_error(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.side_effect = AuthorizationError("auth", "dev", 401, "info")
+    with pytest.raises(EntitlementError):
+        entitlement_v2.update(123, 456, "send_sms", region="us")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_reset(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"reset": True}
+    result = entitlement_v2.reset(123)
+    assert result is entitlement_v2
+    assert hasattr(result, "_refreshed")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_update_limit_success(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"updated": True}
+    result = entitlement_v2.update_limit(123, "sms", 1000, source="admin")
+    assert result is entitlement_v2
+    assert hasattr(result, "_refreshed")
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_update_limit_auth_error(mock_api_requestor, entitlement_v2):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.side_effect = AuthorizationError("auth", "dev", 401, "info")
+    with pytest.raises(EntitlementError):
+        entitlement_v2.update_limit(123, "sms", 1000, source="admin")

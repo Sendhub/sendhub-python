@@ -1,10 +1,10 @@
-from typing import Any, List, Optional, Tuple, TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
 from sendhub.constants import BILLING_BASE
 
-ValueType: TypeAlias = bool | int | float | str | List[Any] | dict[str, Any]
+ValueType: TypeAlias = bool | int | float | str | list[Any] | dict[str, Any]
 CustomDict: TypeAlias = dict[str, ValueType]
 
 
@@ -38,7 +38,7 @@ class BillingProducts(APIResource):
 
     def list_products(
         self, with_hidden: bool = True, active_status: str = "all"
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         List the products.
 
@@ -76,7 +76,7 @@ class BillingProducts(APIResource):
     def create_product(
         self,
         name: str,
-        prices: List[Price],
+        prices: list[Price],
         hippaPlan: bool,
         shortcodeKeywords: bool,
         autoAttendant: bool,
@@ -96,10 +96,10 @@ class BillingProducts(APIResource):
         maxBasicVmTranscriptions: int,
         maxPremiumVmTranscriptions: int,
         active: bool = True,
-        description: Optional[str] = None,
-        statementDescriptor: Optional[str] = None,
-        productMetadata: Optional[CustomDict] = None,
-        defaultPriceId: Optional[Any] = None,
+        description: str | None = None,
+        statementDescriptor: str | None = None,
+        productMetadata: CustomDict | None = None,
+        defaultPriceId: Any | None = None,
         hidden: bool = True,
         mailLogo: bool = True,
     ) -> Any:
@@ -166,8 +166,8 @@ class BillingProducts(APIResource):
         self,
         with_hidden: bool = True,
         active_status: str = "all",
-        etag: Optional[str] = None,
-    ) -> Tuple[Optional[List[Any]], Optional[str], bool]:
+        etag: str | None = None,
+    ) -> tuple[list[Any] | None, str | None, bool]:
         """Cache-aware product list read.
 
         Sends ``If-None-Match: <etag>`` when *etag* is supplied.  Returns a
@@ -189,7 +189,7 @@ class BillingProducts(APIResource):
             extra_headers=extra_headers or None,
             return_metadata=True,
         )
-        new_etag: Optional[str] = resp_headers.get("ETag") or resp_headers.get("etag")
+        new_etag: str | None = resp_headers.get("ETag") or resp_headers.get("etag")
         not_modified = rcode == 304
         if not not_modified and payload is not None:
             return payload, new_etag, not_modified

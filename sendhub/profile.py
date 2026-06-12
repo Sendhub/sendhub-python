@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -39,7 +39,7 @@ class Profile(APIResource):
                 f"Failed to fetch profile for user_id={user_id}: {exc}"
             ) from exc
 
-    def update(self, user_id: int, data: Dict[str, Any]) -> "Profile":
+    def update(self, user_id: int, data: dict[str, Any]) -> "Profile":
         """
         Updates the user by user_id.
 

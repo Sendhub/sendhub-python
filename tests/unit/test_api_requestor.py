@@ -1,7 +1,8 @@
-import pytest
-import json
 import datetime
-from unittest.mock import patch, MagicMock
+import json
+from unittest.mock import MagicMock, patch
+
+import pytest
 from sendhub.api_requestor import APIRequestor
 from sendhub.sendhub_error import (
     APIConnectionError,
@@ -12,10 +13,11 @@ from sendhub.sendhub_error import (
     TryAgainLaterError,
 )
 
+
 def test_api_url_default_base():
     req = APIRequestor()
     req.api_base = None
-    assert req.api_url("foo") == f"https://api.sendhub.comfoo/"
+    assert req.api_url("foo") == "https://api.sendhub.comfoo/"
 
 def test_api_url_custom_base():
     req = APIRequestor()
@@ -194,37 +196,37 @@ def test_interpret_response_error_code(monkeypatch):
         with pytest.raises(APIError):
             req.interpret_response(resp, 400)
 
-@patch("sendhub.api_requestor.requests.request")
+@patch("sendhub.api_requestor._session")
 @patch("sendhub.api_requestor.LOGGER")
-def test_do_send_request_get(mock_logger, mock_request):
+def test_do_send_request_get(mock_logger, mock_session):
     req = APIRequestor()
     mock_result = MagicMock()
     mock_result.content = b"abc"
     mock_result.status_code = 200
-    mock_request.return_value = mock_result
-    content, status, _ = req.do_send_request("get", "url", {}, {"a": 1})
+    mock_session.request.return_value = mock_result
+    content, status, _ = req.do_send_request("get", "http://x/", {}, {"a": 1})
     assert content == b"abc"
     assert status == 200
 
-@patch("sendhub.api_requestor.requests.request")
+@patch("sendhub.api_requestor._session")
 @patch("sendhub.api_requestor.LOGGER")
-def test_do_send_request_post(mock_logger, mock_request):
+def test_do_send_request_post(mock_logger, mock_session):
     req = APIRequestor()
     mock_result = MagicMock()
     mock_result.content = b"abc"
     mock_result.status_code = 201
-    mock_request.return_value = mock_result
-    content, status, _ = req.do_send_request("post", "url", {}, {"a": 1})
+    mock_session.request.return_value = mock_result
+    content, status, _ = req.do_send_request("post", "http://x/", {}, {"a": 1})
     assert content == b"abc"
     assert status == 201
 
-@patch("sendhub.api_requestor.requests.request")
+@patch("sendhub.api_requestor._session")
 @patch("sendhub.api_requestor.LOGGER")
-def test_do_send_request_type_error(mock_logger, mock_request):
+def test_do_send_request_type_error(mock_logger, mock_session):
     req = APIRequestor()
-    mock_request.side_effect = TypeError("fail")
+    mock_session.request.side_effect = TypeError("fail")
     with pytest.raises(TypeError):
-        req.do_send_request("get", "url", {}, {"a": 1})
+        req.do_send_request("get", "http://x/", {}, {"a": 1})
 
 @patch("sendhub.api_requestor.requests.request")
 @patch("sendhub.api_requestor.LOGGER")

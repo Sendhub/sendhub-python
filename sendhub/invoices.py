@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from sendhub.api_requestor import APIRequestor
 from sendhub.api_resource import APIResource
@@ -17,8 +17,8 @@ class Invoice(APIResource):
         invoice_id: str,
         action: str,
         correlation_id: str = "",
-        expected_customer_id: Optional[str] = None,
-        expected_currency: Optional[str] = None,
+        expected_customer_id: str | None = None,
+        expected_currency: str | None = None,
     ) -> "Invoice":
         """Process a Stripe invoice action.
 

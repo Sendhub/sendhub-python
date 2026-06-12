@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from typing import Optional
 
 HTTP_LIB: str = "requests"
 LOGGER: logging.Logger = logging.getLogger("sendhub")
@@ -26,14 +25,14 @@ _handler.setFormatter(_formatter)
 LOGGER.addHandler(_handler)
 
 # Configuration variables
-USERNAME: Optional[str] = None
-PASSWORD: Optional[str] = None
+USERNAME: str | None = None
+PASSWORD: str | None = None
 INTERNAL_API: bool = False
 API_BASE: str = "https://api.sendhub.com"
 ENTITLEMENTS_BASE: str = "https://entitlements.sendhub.com"
 PROFILE_BASE: str = "https://profile.sendhub.com"
 BILLING_BASE: str = "https://billing.sendhub.com"
-API_VERSION: Optional[str] = None
+API_VERSION: str | None = None
 VERIFY_SSL: bool = ENVIRONMENT_DETAIL != "development"
 
 _UNDERSCORER1 = re.compile(r"(.)([A-Z][a-z]+)")
