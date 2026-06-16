@@ -1,8 +1,8 @@
+import importlib
+
+import pytest
 import sendhub
 import sendhub.constants as constants
-
-import importlib
-import pytest
 
 
 def test_early_stub_raises_runtime_error():

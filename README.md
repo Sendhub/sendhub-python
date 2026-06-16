@@ -285,31 +285,6 @@ $ tree -I venv
 ├── sendhub
 │   ├── VERSION
 │   ├── __init__.py
-│   ├── __pycache__
-│   │   ├── __init__.cpython-314.pyc
-│   │   ├── api_requestor.cpython-314.pyc
-│   │   ├── api_resource.cpython-314.pyc
-│   │   ├── billing_accounts.cpython-314.pyc
-│   │   ├── billing_plans.cpython-314.pyc
-│   │   ├── billing_prices.cpython-314.pyc
-│   │   ├── billing_products.cpython-314.pyc
-│   │   ├── constants.cpython-314.pyc
-│   │   ├── coupons.cpython-314.pyc
-│   │   ├── credit_notes.cpython-314.pyc
-│   │   ├── creditcard_blacklists.cpython-314.pyc
-│   │   ├── enterprises.cpython-314.pyc
-│   │   ├── entitlements.cpython-314.pyc
-│   │   ├── invoices.cpython-314.pyc
-│   │   ├── payment_methods.cpython-314.pyc
-│   │   ├── profile.cpython-314.pyc
-│   │   ├── sendhub_error.cpython-314.pyc
-│   │   ├── sendhub_object.cpython-314.pyc
-│   │   ├── stripe_customers.cpython-314.pyc
-│   │   ├── stripe_prices.cpython-314.pyc
-│   │   ├── stripe_products.cpython-314.pyc
-│   │   ├── stripe_subscriptions.cpython-314.pyc
-│   │   ├── utils.cpython-314.pyc
-│   │   └── version.cpython-314.pyc
 │   ├── api_requestor.py
 │   ├── api_resource.py
 │   ├── billing_accounts.py
@@ -318,6 +293,7 @@ $ tree -I venv
 │   ├── billing_products.py
 │   ├── constants.py
 │   ├── coupons.py
+│   ├── credit_grants.py
 │   ├── credit_notes.py
 │   ├── creditcard_blacklists.py
 │   ├── enterprises.py
@@ -335,56 +311,6 @@ $ tree -I venv
 │   └── version.py
 └── tests
     └── unit
-        ├── __pycache__
-        │   ├── test_api_requestor.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_api_requestor.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_api_resource.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_api_resource.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_billing_accounts.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_billing_accounts.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_billing_accounts.cpython-314.pyc
-        │   ├── test_billing_plans.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_billing_plans.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_billing_prices.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_billing_prices.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_billing_products.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_billing_products.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_constants.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_constants.cpython-314.pyc
-        │   ├── test_coupons.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_coupons.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_credit_notes.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_credit_notes.cpython-314.pyc
-        │   ├── test_creditcard_blacklists.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_creditcard_blacklists.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_enterprises.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_enterprises.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_entitlements.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_entitlements.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_invoices.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_invoices.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_package_init.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_package_init.cpython-314.pyc
-        │   ├── test_payment_methods.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_payment_methods.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_profile.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_profile.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_sendhub_error.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_sendhub_error.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_sendhub_object.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_sendhub_object.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_stripe_customers.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_stripe_customers.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_stripe_prices.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_stripe_prices.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_stripe_products.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_stripe_products.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_stripe_subscriptions.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_stripe_subscriptions.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_utils.cpython-314-pytest-9.0.2.pyc
-        │   ├── test_utils.cpython-314-pytest-9.0.3.pyc
-        │   ├── test_utils.cpython-314.pyc
-        │   └── test_version.cpython-314-pytest-9.0.3.pyc
         ├── test_api_requestor.py
         ├── test_api_resource.py
         ├── test_billing_accounts.py
@@ -393,6 +319,7 @@ $ tree -I venv
         ├── test_billing_products.py
         ├── test_constants.py
         ├── test_coupons.py
+        ├── test_credit_grants.py
         ├── test_credit_notes.py
         ├── test_creditcard_blacklists.py
         ├── test_enterprises.py
@@ -410,7 +337,7 @@ $ tree -I venv
         ├── test_utils.py
         └── test_version.py
 
-6 directories, 130 files
+5 directories, 61 files
 ```
 
 - `sendhub/` – package source
