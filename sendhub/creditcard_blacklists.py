@@ -40,6 +40,16 @@ class CreditCardBlacklist(APIResource):
             raise TypeError("fingerprint must be a string")
         return self.create_object(fingerprint=fingerprint)
 
+    def update_blacklist_item(self, item_id: Any, **kwargs: Any) -> SendHubObject:
+        """Update the blacklist item (e.g. its fingerprint)."""
+        if item_id is None:
+            raise ValueError("item_id must not be None")
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        url = self.instance_url(str(item_id))
+        response = requestor.request("patch", url, params=kwargs)
+        return SendHubObject.construct_from(response)
+
     def delete_blacklist_item(self, item_id: Any) -> None:
         """Delete the blacklist item."""
         if item_id is None:

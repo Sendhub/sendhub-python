@@ -406,12 +406,15 @@ class BillingAccount(APIResource):
 
         return self
 
-    def get_plan_history(self, enterprise_id, offset, limit):
+    def get_plan_history(self, enterprise_id, offset, limit, search=None):
         """To get the plan history"""
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
         url = f"{self.instance_url(str(enterprise_id))}/plan_history"
-        response = requestor.request("get", url, {"offset": offset, "limit": limit})
+        params = {"offset": offset, "limit": limit}
+        if search:
+            params["search"] = search
+        response = requestor.request("get", url, params)
         self.refresh_from(response)
 
         return self
