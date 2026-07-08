@@ -58,6 +58,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "camel_to_snake": _MOD_UTILS,
     "convert_to_sendhub_object": _MOD_UTILS,
     "retry": _MOD_UTILS,
+    # request-id propagation (loaded from .request_context)
+    "set_current_request_id": ".request_context",
+    "reset_current_request_id": ".request_context",
+    "get_current_request_id": ".request_context",
 }
 
 # Determine which names we should keep in sync with sendhub.constants.
@@ -206,6 +210,9 @@ mod.__dict__["__all__"] = [
     "camel_to_snake",
     "convert_to_sendhub_object",
     "retry",
+    "set_current_request_id",
+    "reset_current_request_id",
+    "get_current_request_id",
     # constants (these are accessible through the sync mechanism)
     "API_BASE",
     "API_VERSION",
@@ -216,6 +223,7 @@ mod.__dict__["__all__"] = [
     "BILLING_BASE",
     "ENTITLEMENTS_BASE",
     "PROFILE_BASE",
+    "ORIGIN_SERVICE",
     "_UNDERSCORER1",
     "__UNDERSCORER2",
 ]

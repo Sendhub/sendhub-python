@@ -26,6 +26,7 @@ from sendhub.sendhub_error import (
     InvalidRequestError,
     TryAgainLaterError,
 )
+from sendhub.request_context import get_current_request_id
 from sendhub.utils import retry
 from sendhub.version import VERSION
 
@@ -291,6 +292,12 @@ class APIRequestor:
         }
         if API_VERSION is not None:
             headers["SendHub-Version"] = API_VERSION
+
+        request_id = get_current_request_id()
+        if request_id:
+            headers["X-Request-ID"] = request_id
+        if _constants.ORIGIN_SERVICE:
+            headers["X-SendHub-Origin-Service"] = _constants.ORIGIN_SERVICE
 
         if return_metadata:
             rbody, rcode, resp_headers = self.do_send_request(

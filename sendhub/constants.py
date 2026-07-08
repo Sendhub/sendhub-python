@@ -35,6 +35,11 @@ BILLING_BASE: str = "https://billing.sendhub.com"
 API_VERSION: str | None = None
 VERIFY_SSL: bool = ENVIRONMENT_DETAIL != "development"
 
+# Name of the service using this SDK instance (e.g. "inforeach", "billing_service").
+# Sent as the X-SendHub-Origin-Service header on outbound requests so the
+# receiving service's logs show which service initiated the call.
+ORIGIN_SERVICE: str | None = None
+
 _UNDERSCORER1 = re.compile(r"(.)([A-Z][a-z]+)")
 __UNDERSCORER2 = re.compile(r"([a-z0-9])([A-Z])")
 
