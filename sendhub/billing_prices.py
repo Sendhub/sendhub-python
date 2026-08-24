@@ -64,6 +64,7 @@ class BillingPrices(APIResource):
         productId: int,
         interval: str,
         priceMetadata: CustomDict | None = None,
+        ownerUserId: int | None = None,
     ) -> object:
         """
         Creates a new billing price.
@@ -81,6 +82,8 @@ class BillingPrices(APIResource):
             productId (int): Product ID.
             interval (str): Billing interval.
             priceMetadata (Optional[CustomDict]): Additional metadata.
+            ownerUserId (Optional[int]): auth_user.id to record as the price's
+                initial owner. Omit/None leaves the price unowned.
         Returns:
             object: The created price object.
         """
@@ -97,6 +100,7 @@ class BillingPrices(APIResource):
             priceMetadata=priceMetadata,
             productId=productId,
             interval=interval,
+            ownerUserId=ownerUserId,
         )
 
     def update_price(self, price_id: int, active: bool) -> object:
