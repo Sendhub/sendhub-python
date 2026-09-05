@@ -225,6 +225,7 @@ class BillingAccount(APIResource):
         subscription_count: int | None = None,
         plan_change_strategy: str | None = None,
         billing_email: str | None = None,
+        reason: str | None = None,
     ) -> object:
         """
         Updates a billing account.
@@ -236,6 +237,8 @@ class BillingAccount(APIResource):
             subscription_count (Optional[int]): New subscription count (optional).
             plan_change_strategy (Optional[str]): Plan change strategy (optional).
             billing_email (Optional[str]): New billing email (optional).
+            reason (Optional[str]): Reason for the correction; required by the billing
+                service when `plan_change_strategy` is the unpaid strategy (optional).
         Returns:
             object: The updated billing account object.
         """
@@ -250,6 +253,8 @@ class BillingAccount(APIResource):
             params["billingEmail"] = billing_email
         if plan_change_strategy is not None:
             params["planChangeStrategy"] = plan_change_strategy
+        if reason:
+            params["reason"] = reason
         return self.update_object(obj_id=enterprise_id, **params)
 
     def change_plan(
@@ -275,13 +280,17 @@ class BillingAccount(APIResource):
             obj_id=enterprise_id, id=str(enterprise_id), planId=str(plan_id), **params
         )
 
-    def add_user(self, enterprise_id: int, count: int = 1) -> "BillingAccount":
+    def add_user(
+        self, enterprise_id: int, count: int = 1, reason: str | None = None
+    ) -> "BillingAccount":
         """
         Adds a user to the enterprise.
 
         Args:
             enterprise_id (int): The ID of the enterprise.
             count (int): Number of users to add (default: 1).
+            reason (Optional[str]): Reason for the correction; required by the billing
+                service when this hits the unpaid-strategy no-charge path (optional).
         Returns:
             BillingAccount: The updated BillingAccount instance.
         """
@@ -289,7 +298,10 @@ class BillingAccount(APIResource):
             requestor = APIRequestor()
             requestor.api_base = self.get_base_url()
             url = f"{self.instance_url(str(enterprise_id))}/users"
-            response = requestor.request("post", url, {"subscriptionCount": count})
+            payload: dict[str, object] = {"subscriptionCount": count}
+            if reason:
+                payload["reason"] = reason
+            response = requestor.request("post", url, payload)
             self.refresh_from(response)
             return self
         except (ValueError, TypeError, RuntimeError) as exc:
@@ -322,21 +334,25 @@ class BillingAccount(APIResource):
         description,
         prorate=False,
         void=False,
+        reason=None,
     ):
         """Adjusts the balance for the given enterprise"""
         requestor = APIRequestor()
         requestor.api_base = self.get_base_url()
         url = f"{self.instance_url(str(enterprise_id))}/balance"
+        payload = {
+            "balanceAdjustment": balance_adjustment,
+            "adjustmentType": adjustment_type,
+            "description": description,
+            "prorate": prorate,
+            "void": void,
+        }
+        if reason:
+            payload["reason"] = reason
         response = requestor.request(
             "put",
             url,
-            {
-                "balanceAdjustment": balance_adjustment,
-                "adjustmentType": adjustment_type,
-                "description": description,
-                "prorate": prorate,
-                "void": void,
-            },
+            payload,
         )
         self.refresh_from(response)
 

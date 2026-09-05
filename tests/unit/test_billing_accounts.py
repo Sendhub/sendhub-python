@@ -51,6 +51,17 @@ def test_update_account(billing_account):
     assert result["subscriptionCount"] == 10
     assert result["planChangeStrategy"] == "paid"
     assert result["billingEmail"] == "new@example.com"
+    assert "reason" not in result
+
+def test_update_account_with_reason(billing_account):
+    result = billing_account.update_account(
+        1,
+        plan_change_strategy=BillingAccount.UNPAID_PLAN_CHANGE_STRATEGY,
+        reason="Line deletion credit refund",
+    )
+    assert result["obj_id"] == 1
+    assert result["planChangeStrategy"] == "unpaid"
+    assert result["reason"] == "Line deletion credit refund"
 
 def test_change_plan(billing_account):
     result = billing_account.change_plan(1, 2, plan_change_strategy="forced_fresh")
@@ -80,6 +91,21 @@ def test_add_user_success(mock_api_requestor, billing_account):
     result = billing_account.add_user(1, count=1)
     assert result is billing_account
     assert hasattr(result, "_refreshed")
+    mock_instance.request.assert_called_once_with(
+        "post", "/accounts/1/users", {"subscriptionCount": 1}
+    )
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_add_user_with_reason(mock_api_requestor, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"subscriptionCount": 1}
+    result = billing_account.add_user(1, count=1, reason="New user registration")
+    assert result is billing_account
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/accounts/1/users",
+        {"subscriptionCount": 1, "reason": "New user registration"},
+    )
 
 @patch("sendhub.billing_accounts.APIRequestor")
 def test_add_user_failure(mock_api_requestor, billing_account):
@@ -109,6 +135,29 @@ def test_adjust_balance(mock_api_requestor, billing_account):
     result = billing_account.adjust_balance(1, 100, "credit", "desc", prorate=True, void=False)
     assert result == {"balance": "adjusted"}
     assert hasattr(billing_account, "_refreshed")
+    called_payload = mock_instance.request.call_args[0][2]
+    assert "reason" not in called_payload
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_adjust_balance_with_reason(mock_api_requestor, billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"balance": "adjusted"}
+    result = billing_account.adjust_balance(
+        1, 100, "credit", "desc", prorate=True, void=False, reason="Line Deletion Credit"
+    )
+    assert result == {"balance": "adjusted"}
+    mock_instance.request.assert_called_once_with(
+        "put",
+        "/accounts/1/balance",
+        {
+            "balanceAdjustment": 100,
+            "adjustmentType": "credit",
+            "description": "desc",
+            "prorate": True,
+            "void": False,
+            "reason": "Line Deletion Credit",
+        },
+    )
 
 @patch("sendhub.billing_accounts.APIRequestor")
 def test_get_plan_data(mock_api_requestor, billing_account):
