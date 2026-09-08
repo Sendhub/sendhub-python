@@ -33,6 +33,35 @@ class StripeSubscription(APIResource):
             return response
         return list(response)
 
+    def get_expiring_subscriptions(
+        self, period_end_gte: int, period_end_lte: int, status: str = "active"
+    ) -> list[object]:
+        """List subscriptions (account-wide) whose current_period_end falls
+        within [period_end_gte, period_end_lte] (Unix timestamps, inclusive).
+
+        A single filtered Stripe query, not one call per customer — use this
+        instead of calling get_subscriptions() in a per-customer loop when
+        the goal is "which subscriptions are expiring soon".
+
+        Args:
+            period_end_gte: Inclusive lower bound (Unix timestamp) for current_period_end.
+            period_end_lte: Inclusive upper bound (Unix timestamp) for current_period_end.
+            status: Stripe subscription status filter (default "active").
+        Returns:
+            List[object]: List of subscription objects.
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        params: dict[str, Any] = {
+            "period_end_gte": period_end_gte,
+            "period_end_lte": period_end_lte,
+            "status": status,
+        }
+        response = requestor.request("get", f"{self.class_url()}/expiring", params)
+        if isinstance(response, list):
+            return response
+        return list(response)
+
     def update_subscription(
         self,
         subscription_id: str,

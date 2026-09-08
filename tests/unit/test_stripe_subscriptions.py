@@ -63,6 +63,45 @@ def test_get_subscriptions_non_list_response(mock_api_requestor, stripe_subscrip
 
 
 @patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_get_expiring_subscriptions_defaults_status_active(mock_api_requestor, stripe_subscription):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = [{"id": "sub_abc", "customer": "cus_abc"}]
+
+    result = stripe_subscription.get_expiring_subscriptions(1000, 2000)
+
+    assert result == [{"id": "sub_abc", "customer": "cus_abc"}]
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/stripe-subscriptions/expiring",
+        {"period_end_gte": 1000, "period_end_lte": 2000, "status": "active"},
+    )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_get_expiring_subscriptions_custom_status(mock_api_requestor, stripe_subscription):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = [{"id": "sub_abc"}]
+
+    stripe_subscription.get_expiring_subscriptions(1000, 2000, status="all")
+
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/stripe-subscriptions/expiring",
+        {"period_end_gte": 1000, "period_end_lte": 2000, "status": "all"},
+    )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_get_expiring_subscriptions_non_list_response(mock_api_requestor, stripe_subscription):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = iter([{"id": "sub_abc"}])
+
+    result = stripe_subscription.get_expiring_subscriptions(1000, 2000)
+
+    assert isinstance(result, list)
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
 def test_update_subscription_minimal(mock_api_requestor, stripe_subscription):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.return_value = {"id": "sub_abc", "status": "canceled"}
