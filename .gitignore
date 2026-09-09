@@ -115,3 +115,5 @@ sdist/
 venv/
 env/
 ENV/
+
+.worktrees/
