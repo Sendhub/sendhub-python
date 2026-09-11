@@ -38,16 +38,16 @@ def test_create_account(billing_account):
     result = billing_account.create_account(1, "Test", "test@example.com", 2, 5, "cust123")
     assert result["id"] == "1"
     assert result["name"] == "Test"
-    assert result["planId"] == "2"
+    assert result["priceId"] == "2"
     assert result["subscriptionCount"] == 5
     assert result["customer"] == "cust123"
     assert result["billingEmail"] == "test@example.com"
 
 def test_update_account(billing_account):
-    result = billing_account.update_account(1, name="NewName", plan_id=2, subscription_count=10, plan_change_strategy="paid", billing_email="new@example.com")
+    result = billing_account.update_account(1, name="NewName", price_id=2, subscription_count=10, plan_change_strategy="paid", billing_email="new@example.com")
     assert result["obj_id"] == 1
     assert result["name"] == "NewName"
-    assert result["planId"] == 2
+    assert result["priceId"] == "2"
     assert result["subscriptionCount"] == 10
     assert result["planChangeStrategy"] == "paid"
     assert result["billingEmail"] == "new@example.com"
@@ -67,7 +67,7 @@ def test_change_plan(billing_account):
     result = billing_account.change_plan(1, 2, plan_change_strategy="forced_fresh")
     assert result["obj_id"] == 1
     assert result["id"] == "1"
-    assert result["planId"] == "2"
+    assert result["priceId"] == "2"
     assert result["planChangeStrategy"] == "forced_fresh"
 
 @patch("sendhub.billing_accounts.APIRequestor")

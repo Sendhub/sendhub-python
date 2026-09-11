@@ -64,7 +64,7 @@ def test_create_price(billing_prices):
     assert result["name"] == "Standard"
     assert result["stripeNickname"] == "std"
     assert result["currency"] == "USD"
-    assert result["productId"] == 1
+    assert result["productId"] == "1"
     assert result["interval"] == "month"
     assert result["priceMetadata"] == metadata
 
