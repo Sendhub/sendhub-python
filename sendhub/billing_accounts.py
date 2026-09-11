@@ -246,7 +246,7 @@ class BillingAccount(APIResource):
         if name is not None:
             params["name"] = name
         if plan_id is not None:
-            params["planId"] = str(plan_id)
+            params["planId"] = plan_id
         if subscription_count is not None:
             params["subscriptionCount"] = subscription_count
         if billing_email is not None:

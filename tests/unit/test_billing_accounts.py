@@ -47,7 +47,7 @@ def test_update_account(billing_account):
     result = billing_account.update_account(1, name="NewName", plan_id=2, subscription_count=10, plan_change_strategy="paid", billing_email="new@example.com")
     assert result["obj_id"] == 1
     assert result["name"] == "NewName"
-    assert result["planId"] == "2"
+    assert result["planId"] == 2
     assert result["subscriptionCount"] == 10
     assert result["planChangeStrategy"] == "paid"
     assert result["billingEmail"] == "new@example.com"
