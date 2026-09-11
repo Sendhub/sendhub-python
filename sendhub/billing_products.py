@@ -19,7 +19,7 @@ class Price(TypedDict):
     stripeNickname: str
     currency: str
     priceMetadata: CustomDict
-    productId: int
+    productId: str
     interval: str
 
 
@@ -148,7 +148,7 @@ class BillingProducts(APIResource):
 
     def update_product(self, product_id, active):
         """To update the plan"""
-        return self.update_object(obj_id=product_id, id=product_id, active=active)
+        return self.update_object(obj_id=product_id, id=str(product_id), active=active)
 
     def delete_product(self, product_id):
         """To delete a plan"""

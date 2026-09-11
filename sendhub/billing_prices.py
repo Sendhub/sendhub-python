@@ -98,7 +98,10 @@ class BillingPrices(APIResource):
             stripeNickname=stripeNickname,
             currency=currency,
             priceMetadata=priceMetadata,
-            productId=productId,
+            # product.id is a VARCHAR PK despite this parameter's type hint --
+            # always send it as a str (see BillingAccount.update_account for the
+            # same fix and the exact crash this avoids).
+            productId=str(productId),
             interval=interval,
             ownerUserId=ownerUserId,
         )
@@ -113,7 +116,7 @@ class BillingPrices(APIResource):
         Returns:
             object: The updated price object.
         """
-        return self.update_object(obj_id=price_id, id=price_id, active=active)
+        return self.update_object(obj_id=price_id, id=str(price_id), active=active)
 
     def delete_price(self, price_id: int) -> None:
         """

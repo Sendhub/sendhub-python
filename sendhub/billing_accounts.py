@@ -116,7 +116,7 @@ class BillingAccount(APIResource):
         enterprise_id: int,
         enterprise_name: str,
         billing_email: str,
-        plan_id: int,
+        price_id: int,
         count: int,
         customer_id: str | None = None,
     ) -> object:
@@ -127,7 +127,9 @@ class BillingAccount(APIResource):
             enterprise_id (int): The ID of the enterprise.
             enterprise_name (str): The name of the enterprise.
             billing_email (str): The billing email address.
-            plan_id (int): The plan ID.
+            price_id (int): The billing price ID (billing.price.id) -- not a
+                PaymentPlan id; renamed from plan_id/planId to match what this
+                value actually addresses.
             count (int): Subscription count.
             customer_id (Optional[str]): Customer ID (optional).
         Returns:
@@ -136,7 +138,7 @@ class BillingAccount(APIResource):
         return self.create_object(
             id=str(enterprise_id),
             name=enterprise_name,
-            planId=str(plan_id),
+            priceId=str(price_id),
             subscriptionCount=count,
             customer=customer_id,
             billingEmail=billing_email,
@@ -221,7 +223,7 @@ class BillingAccount(APIResource):
         self,
         enterprise_id: int,
         name: str | None = None,
-        plan_id: int | None = None,
+        price_id: int | None = None,
         subscription_count: int | None = None,
         plan_change_strategy: str | None = None,
         billing_email: str | None = None,
@@ -233,7 +235,8 @@ class BillingAccount(APIResource):
         Args:
             enterprise_id (int): The ID of the enterprise.
             name (Optional[str]): New name (optional).
-            plan_id (Optional[int]): New plan ID (optional).
+            price_id (Optional[int]): New billing price ID (billing.price.id;
+                optional). Renamed from plan_id/planId -- not a PaymentPlan id.
             subscription_count (Optional[int]): New subscription count (optional).
             plan_change_strategy (Optional[str]): Plan change strategy (optional).
             billing_email (Optional[str]): New billing email (optional).
@@ -245,8 +248,14 @@ class BillingAccount(APIResource):
         params: dict[str, object] = {"id": str(enterprise_id)}
         if name is not None:
             params["name"] = name
-        if plan_id is not None:
-            params["planId"] = plan_id
+        if price_id is not None:
+            # Billing's price.id (what priceId addresses) is a VARCHAR PK, not an
+            # int, despite this parameter's type hint -- always send it as a str,
+            # matching create_account() and change_plan() in this same class.
+            # An un-stringified int here reaches billing as a bare JSON number
+            # and crashes its Price.get_by_id() lookup (psycopg: "operator does
+            # not exist: character varying = integer").
+            params["priceId"] = str(price_id)
         if subscription_count is not None:
             params["subscriptionCount"] = subscription_count
         if billing_email is not None:
@@ -260,7 +269,7 @@ class BillingAccount(APIResource):
     def change_plan(
         self,
         enterprise_id: int,
-        plan_id: int,
+        price_id: int,
         plan_change_strategy: str | None = None,
     ) -> object:
         """
@@ -268,7 +277,8 @@ class BillingAccount(APIResource):
 
         Args:
             enterprise_id (int): The ID of the enterprise.
-            plan_id (int): The new plan ID.
+            price_id (int): The new billing price ID (billing.price.id). Renamed
+                from plan_id/planId -- not a PaymentPlan id.
             plan_change_strategy (Optional[str]): Plan change strategy (optional).
         Returns:
             object: The updated billing account object.
@@ -277,7 +287,7 @@ class BillingAccount(APIResource):
         if plan_change_strategy is not None:
             params["planChangeStrategy"] = plan_change_strategy
         return self.update_object(
-            obj_id=enterprise_id, id=str(enterprise_id), planId=str(plan_id), **params
+            obj_id=enterprise_id, id=str(enterprise_id), priceId=str(price_id), **params
         )
 
     def add_user(
