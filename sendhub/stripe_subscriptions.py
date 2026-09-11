@@ -62,6 +62,46 @@ class StripeSubscription(APIResource):
             return response
         return list(response)
 
+    def create_subscription(
+        self,
+        customer_id: str,
+        price_id: str,
+        trial_end: int | None = None,
+        metadata: dict[str, Any] | None = None,
+        correlation_id: str = "",
+    ) -> "StripeSubscription":
+        """Create a new Stripe subscription for an existing customer.
+
+        Idempotent per (customer_id, price_id) on billing's side -- if an
+        active/trialing subscription already exists at this price, it's
+        returned as-is instead of creating a duplicate.
+
+        Args:
+            customer_id: The Stripe customer identifier.
+            price_id: Billing service price ID (billing.price.id).
+            trial_end: Optional Unix timestamp to trial the subscription until.
+            metadata: Optional Stripe subscription metadata (e.g. to tag a
+                secondary/add-on subscription like AI Credits, distinct from
+                the account's main plan subscription).
+            correlation_id: Caller-supplied trace identifier.
+        Returns:
+            StripeSubscription: self, refreshed from the response.
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        payload: dict[str, Any] = {
+            "customer_id": customer_id,
+            "price_id": str(price_id),
+            "correlation_id": correlation_id,
+        }
+        if trial_end is not None:
+            payload["trial_end"] = trial_end
+        if metadata:
+            payload["metadata"] = metadata
+        response = requestor.request("post", "/api/v2/subscription/create", payload)
+        self.refresh_from(response)
+        return self
+
     def update_subscription(
         self,
         subscription_id: str,

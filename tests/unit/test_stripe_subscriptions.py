@@ -102,6 +102,71 @@ def test_get_expiring_subscriptions_non_list_response(mock_api_requestor, stripe
 
 
 @patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_create_subscription_minimal(mock_api_requestor, stripe_subscription):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "sub_new", "status": "active"}
+
+    result = stripe_subscription.create_subscription("cus_abc", "price_1")
+
+    assert result is stripe_subscription
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/subscription/create",
+        {
+            "customer_id": "cus_abc",
+            "price_id": "price_1",
+            "correlation_id": "",
+        },
+    )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_create_subscription_coerces_price_id_to_str(mock_api_requestor, stripe_subscription):
+    """price_id is Billing's String(50) PK -- always send it as a str, matching
+    every other price/plan id call site in this client library."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "sub_new", "status": "active"}
+
+    stripe_subscription.create_subscription("cus_abc", 1935)
+
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/subscription/create",
+        {
+            "customer_id": "cus_abc",
+            "price_id": "1935",
+            "correlation_id": "",
+        },
+    )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_create_subscription_full(mock_api_requestor, stripe_subscription):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "sub_new", "status": "trialing"}
+
+    stripe_subscription.create_subscription(
+        "cus_abc",
+        "price_1",
+        trial_end=1234567890,
+        metadata={"non_plan_subscription": "ai_credits"},
+        correlation_id="corr-999",
+    )
+
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/subscription/create",
+        {
+            "customer_id": "cus_abc",
+            "price_id": "price_1",
+            "correlation_id": "corr-999",
+            "trial_end": 1234567890,
+            "metadata": {"non_plan_subscription": "ai_credits"},
+        },
+    )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
 def test_update_subscription_minimal(mock_api_requestor, stripe_subscription):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.return_value = {"id": "sub_abc", "status": "canceled"}
