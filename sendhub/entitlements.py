@@ -47,9 +47,7 @@ class Entitlement(APIResource):
             self.refresh_from(response)
             return self
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to list usage for user_id={user_id}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to list usage for user_id={user_id}: {exc}") from exc
 
     def check(self, user_id: int, action: str, **params: Any) -> "Entitlement":
         """
@@ -70,9 +68,7 @@ class Entitlement(APIResource):
             self.refresh_from(response)
             return self
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to check entitlement for user_id={user_id}, action={action}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to check entitlement for user_id={user_id}, action={action}: {exc}") from exc
 
     def update(self, user_id: int, action: str, **params: Any) -> "Entitlement":
         """
@@ -94,13 +90,9 @@ class Entitlement(APIResource):
             self._id = self.uuid
             return self
         except AuthorizationError as aut_err:
-            raise EntitlementError(
-                str(aut_err), aut_err.dev_message, aut_err.code, aut_err.more_info
-            ) from aut_err
+            raise EntitlementError(str(aut_err), aut_err.dev_message, aut_err.code, aut_err.more_info) from aut_err
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to update entitlement for user_id={user_id}, action={action}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to update entitlement for user_id={user_id}, action={action}: {exc}") from exc
 
     def confirm_update(self) -> "Entitlement":
         """
@@ -117,17 +109,13 @@ class Entitlement(APIResource):
         try:
             requestor = APIRequestor()
             requestor.api_base = self.get_base_url()
-            url = "/".join(
-                [self.instance_url(str(self.user_id)), str(self.action), str(self._id)]
-            )
+            url = "/".join([self.instance_url(str(self.user_id)), str(self.action), str(self._id)])
             response = requestor.request("post", url)
             self.refresh_from(response)
             self._id = self.uuid
             return self
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to confirm update for entitlement: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to confirm update for entitlement: {exc}") from exc
 
     def reset(self, user_id: int, action: str, **_params: Any) -> "Entitlement":
         """
@@ -147,9 +135,7 @@ class Entitlement(APIResource):
             self.refresh_from(response)
             return self
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to reset entitlement for user_id={user_id}, action={action}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to reset entitlement for user_id={user_id}, action={action}: {exc}") from exc
 
     def reset_all(self, user_id: int, **_params: Any) -> "Entitlement":
         """
@@ -168,9 +154,7 @@ class Entitlement(APIResource):
             self.refresh_from(response)
             return self
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to reset all entitlements for user_id={user_id}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to reset all entitlements for user_id={user_id}: {exc}") from exc
 
 
 class EntitlementV2(APIResource):
@@ -203,9 +187,7 @@ class EntitlementV2(APIResource):
             self.refresh_from(response)
             return self
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to list usage for enterprise_id={enterprise_id}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to list usage for enterprise_id={enterprise_id}: {exc}") from exc
         return self
 
     def list_limits(self, enterprise_id):
@@ -236,9 +218,7 @@ class EntitlementV2(APIResource):
             response = requestor.request("post", url, params)
             self.refresh_from(response)
         except AuthorizationError as aut_err:
-            raise EntitlementError(
-                str(aut_err), aut_err.dev_message, aut_err.code, aut_err.more_info
-            ) from aut_err
+            raise EntitlementError(str(aut_err), aut_err.dev_message, aut_err.code, aut_err.more_info) from aut_err
 
         return self
 
@@ -254,6 +234,16 @@ class EntitlementV2(APIResource):
 
     def update_limit(self, enterprise_id, limit, value, **params):
         """Updates the limit"""
+        # Both segments are interpolated into the URL path; an empty one
+        # yields ".../limits/<limit>//", which the service answers with an
+        # HTML 404 that callers only see as an opaque APIError. Fail here
+        # instead so the caller (e.g. a form posting blank fields) is told
+        # exactly what was wrong. 0 is a valid value, so test for emptiness,
+        # not falsiness.
+        if limit is None or str(limit) == "":
+            raise ValueError("update_limit: 'limit' must be a non-empty limit name")
+        if value is None or str(value) == "":
+            raise ValueError(f"update_limit: 'value' for limit {limit!r} must not be empty")
         try:
             requestor = APIRequestor()
             requestor.api_base = self.get_base_url()
@@ -262,9 +252,7 @@ class EntitlementV2(APIResource):
             self.refresh_from(response)
 
         except AuthorizationError as aut_err:
-            raise EntitlementError(
-                str(aut_err), aut_err.dev_message, aut_err.code, aut_err.more_info
-            ) from aut_err
+            raise EntitlementError(str(aut_err), aut_err.dev_message, aut_err.code, aut_err.more_info) from aut_err
 
         return self
 

@@ -12,6 +12,7 @@ class DummyEntitlement(Entitlement):
     def refresh_from(self, response):
         self._refreshed = response
 
+
 @pytest.fixture
 def entitlement():
     return DummyEntitlement()
@@ -29,8 +30,10 @@ class DummyEntitlementV2(EntitlementV2):
 def entitlement_v2():
     return DummyEntitlementV2()
 
+
 def test_get_base_url():
     assert Entitlement.get_base_url() == Entitlement.get_base_url()
+
 
 def test_class_url():
     # class_name() is inherited from APIResource, so we simulate its output
@@ -38,7 +41,9 @@ def test_class_url():
         @classmethod
         def class_name(cls):
             return "entitlement"
+
     assert CustomEntitlement.class_url() == "/api/v3/entitlements"
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_list_usage_success(mock_api_requestor, entitlement):
@@ -48,12 +53,14 @@ def test_list_usage_success(mock_api_requestor, entitlement):
     assert result is entitlement
     assert hasattr(result, "_refreshed")
 
+
 @patch("sendhub.entitlements.APIRequestor")
 def test_list_usage_failure(mock_api_requestor, entitlement):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.side_effect = Exception("fail")
     with pytest.raises(RuntimeError):
         entitlement.list_usage(123)
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_check_success(mock_api_requestor, entitlement):
@@ -63,12 +70,14 @@ def test_check_success(mock_api_requestor, entitlement):
     assert result is entitlement
     assert hasattr(result, "_refreshed")
 
+
 @patch("sendhub.entitlements.APIRequestor")
 def test_check_failure(mock_api_requestor, entitlement):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.side_effect = Exception("fail")
     with pytest.raises(RuntimeError):
         entitlement.check(123, "action", param1="val")
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_update_success(mock_api_requestor, entitlement):
@@ -80,12 +89,14 @@ def test_update_success(mock_api_requestor, entitlement):
     assert hasattr(result, "_refreshed")
     assert entitlement._id == "uuid123"
 
+
 @patch("sendhub.entitlements.APIRequestor")
 def test_update_auth_error(mock_api_requestor, entitlement):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.side_effect = AuthorizationError("auth", "dev", 401, "info")
     with pytest.raises(EntitlementError):
         entitlement.update(123, "action", param1="val")
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_update_runtime_error(mock_api_requestor, entitlement):
@@ -94,11 +105,13 @@ def test_update_runtime_error(mock_api_requestor, entitlement):
     with pytest.raises(RuntimeError):
         entitlement.update(123, "action", param1="val")
 
+
 def test_confirm_update_no_id(entitlement):
     entitlement._id = None
     # Should raise InvalidRequestError before any API call
     with pytest.raises(InvalidRequestError):
         entitlement.confirm_update()
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_confirm_update_success(mock_api_requestor, entitlement):
@@ -112,6 +125,7 @@ def test_confirm_update_success(mock_api_requestor, entitlement):
     assert result is entitlement
     assert entitlement._id == "uuid456"
 
+
 @patch("sendhub.entitlements.APIRequestor")
 def test_confirm_update_failure(mock_api_requestor, entitlement):
     entitlement._id = "uuid123"
@@ -122,6 +136,7 @@ def test_confirm_update_failure(mock_api_requestor, entitlement):
     with pytest.raises(RuntimeError):
         entitlement.confirm_update()
 
+
 @patch("sendhub.entitlements.APIRequestor")
 def test_reset_success(mock_api_requestor, entitlement):
     mock_instance = mock_api_requestor.return_value
@@ -130,12 +145,14 @@ def test_reset_success(mock_api_requestor, entitlement):
     assert result is entitlement
     assert hasattr(result, "_refreshed")
 
+
 @patch("sendhub.entitlements.APIRequestor")
 def test_reset_failure(mock_api_requestor, entitlement):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.side_effect = Exception("fail")
     with pytest.raises(RuntimeError):
         entitlement.reset(123, "action")
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_reset_all_success(mock_api_requestor, entitlement):
@@ -144,6 +161,7 @@ def test_reset_all_success(mock_api_requestor, entitlement):
     result = entitlement.reset_all(123)
     assert result is entitlement
     assert hasattr(result, "_refreshed")
+
 
 @patch("sendhub.entitlements.APIRequestor")
 def test_reset_all_failure(mock_api_requestor, entitlement):
@@ -237,3 +255,24 @@ def test_entitlement_v2_update_limit_auth_error(mock_api_requestor, entitlement_
     mock_instance.request.side_effect = AuthorizationError("auth", "dev", 401, "info")
     with pytest.raises(EntitlementError):
         entitlement_v2.update_limit(123, "sms", 1000, source="admin")
+
+
+@pytest.mark.parametrize("limit, value", [("max_messages", ""), ("max_messages", None), ("", 1000), (None, 1000)])
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_update_limit_rejects_empty_segments(mock_api_requestor, entitlement_v2, limit, value):
+    # An empty limit/value used to be interpolated straight into the URL
+    # (".../limits/max_messages//"), which the entitlements service answers
+    # with an HTML 404 that surfaces to callers as an opaque APIError.
+    with pytest.raises(ValueError):
+        entitlement_v2.update_limit(123, limit, value)
+    mock_api_requestor.return_value.request.assert_not_called()
+
+
+@patch("sendhub.entitlements.APIRequestor")
+def test_entitlement_v2_update_limit_accepts_zero(mock_api_requestor, entitlement_v2):
+    # 0 is a legitimate limit value and must not be confused with "empty".
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"updated": True}
+    entitlement_v2.update_limit(123, "max_messages", 0)
+    url = mock_instance.request.call_args.args[1]
+    assert url.endswith("/limits/max_messages/0")
