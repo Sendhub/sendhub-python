@@ -135,6 +135,99 @@ class BillingPrices(APIResource):
                 f"Failed to delete price with price_id={price_id}: {exc}"
             ) from exc
 
+    def set_price_owner(self, price_id: str, user_id: int, acting_user_id: int) -> dict:
+        """
+        Sets billing's owner_user_id for a price (PUT /api/v2/prices/{id}/ownership/).
+
+        acting_user_id is forwarded via X-Internal-Acting-User-Id so billing's
+        auth layer can authorize the call as that (superuser) admin-panel user.
+
+        Args:
+            price_id (str): The price ID.
+            user_id (int): auth_user.id of the new owner.
+            acting_user_id (int): auth_user.id of the admin-panel user making
+                the change.
+        Returns:
+            dict: Billing's response payload.
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        url = f"{self.instance_url(str(price_id))}/ownership"
+        extra_headers = {"X-Internal-Acting-User-Id": str(acting_user_id)}
+        try:
+            # perform_request (not request()) so the raw status code is
+            # visible — request()'s interpret_response() collapses 400 and
+            # 404 into the same exception type, which the idempotent
+            # handling in grant/revoke_price_access below depends on
+            # distinguishing.
+            rbody, rcode, _ = requestor.perform_request(
+                "put", url, {"userId": user_id}, extra_headers=extra_headers
+            )
+            return requestor.interpret_response(rbody, rcode)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to set owner for price_id={price_id}, user_id={user_id}: {exc}"
+            ) from exc
+
+    def grant_price_access(self, price_id: str, user_id: int, acting_user_id: int) -> dict:
+        """
+        Grants delegate access to a price (POST /api/v2/prices/{id}/access/).
+        A 409 (already granted) is treated as success — matches admin's
+        existing idempotent local behavior.
+
+        Args:
+            price_id (str): The price ID.
+            user_id (int): auth_user.id to grant access to.
+            acting_user_id (int): auth_user.id of the admin-panel user making
+                the change.
+        Returns:
+            dict: Billing's response payload.
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        url = f"{self.instance_url(str(price_id))}/access"
+        extra_headers = {"X-Internal-Acting-User-Id": str(acting_user_id)}
+        try:
+            rbody, rcode, _ = requestor.perform_request(
+                "post", url, {"userId": user_id}, extra_headers=extra_headers
+            )
+            if rcode == 409:
+                return {"message": "Access already granted"}
+            return requestor.interpret_response(rbody, rcode)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to grant price access for price_id={price_id}, user_id={user_id}: {exc}"
+            ) from exc
+
+    def revoke_price_access(self, price_id: str, user_id: int, acting_user_id: int) -> None:
+        """
+        Revokes delegate access from a price
+        (DELETE /api/v2/prices/{id}/access/{user_id}/). A 404 (grant not
+        found) is treated as success — matches admin's existing idempotent
+        local behavior.
+
+        Args:
+            price_id (str): The price ID.
+            user_id (int): auth_user.id to revoke access from.
+            acting_user_id (int): auth_user.id of the admin-panel user making
+                the change.
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        url = f"{self.instance_url(str(price_id))}/access/{user_id}"
+        extra_headers = {"X-Internal-Acting-User-Id": str(acting_user_id)}
+        try:
+            rbody, rcode, _ = requestor.perform_request(
+                "delete", url, extra_headers=extra_headers
+            )
+            if rcode == 404:
+                return None
+            requestor.interpret_response(rbody, rcode)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to revoke price access for price_id={price_id}, user_id={user_id}: {exc}"
+            ) from exc
+
     @classmethod
     def class_url(cls) -> str:
         """
