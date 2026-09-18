@@ -86,6 +86,20 @@ class BillingAccount(APIResource):
         return f"/api/v2/account-state/{customer_id}"
 
     @staticmethod
+    def _delinquent_customers_url() -> str:
+        """Build the delinquent-customers endpoint path."""
+
+        return "/api/v2/delinquent-customers"
+
+    def list_delinquent_customer_ids(self) -> list[str]:
+        """Retrieve the Stripe customer ids billing currently considers delinquent."""
+
+        response = self._billing_request("get", self._delinquent_customers_url())
+        getter = getattr(response, "get", None)
+        customer_ids = getter("customer_ids") if callable(getter) else getattr(response, "customer_ids", None)
+        return list(customer_ids or [])
+
+    @staticmethod
     def _extract_customer_id(account: object) -> str | None:
         """Read a customer id from either a dict or SendHubObject-style response."""
 

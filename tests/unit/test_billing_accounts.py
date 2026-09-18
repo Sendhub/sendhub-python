@@ -521,3 +521,28 @@ def test_revoke_entitlement_adjustment(mock_api_requestor, real_billing_account)
         "/api/v2/accounts/12/entitlements/adjust/34",
         payload,
     )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_list_delinquent_customer_ids_returns_ids_from_dict_response(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"customer_ids": ["cus_a", "cus_b"]}
+
+    result = real_billing_account.list_delinquent_customer_ids()
+
+    assert result == ["cus_a", "cus_b"]
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/delinquent-customers",
+        None,
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
+def test_list_delinquent_customer_ids_empty_response(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"customer_ids": []}
+
+    result = real_billing_account.list_delinquent_customer_ids()
+
+    assert result == []
