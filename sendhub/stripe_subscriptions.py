@@ -108,15 +108,21 @@ class StripeSubscription(APIResource):
         new_price_id: str | None = None,
         quantity: int | None = None,
         cancel: bool = False,
+        cancel_at: int | None = None,
         correlation_id: str = "",
     ) -> "StripeSubscription":
-        """Update or cancel a Stripe subscription.
+        """Update, cancel, schedule-cancel, or reactivate a Stripe subscription.
 
         Args:
             subscription_id: The Stripe subscription identifier.
             new_price_id: New price ID to switch to (optional).
             quantity: New seat quantity (optional).
-            cancel: Set True to cancel the subscription.
+            cancel: Set True to cancel the subscription immediately.
+            cancel_at: Unix timestamp to schedule cancellation for a future
+                date instead of cancelling immediately (ignored if cancel is
+                True). Omit together with cancel, new_price_id and quantity
+                to clear any scheduled cancellation and reactivate the
+                subscription.
             correlation_id: Caller-supplied trace identifier.
         Returns:
             StripeSubscription: self, refreshed from the response.
@@ -132,6 +138,8 @@ class StripeSubscription(APIResource):
             payload["new_price_id"] = new_price_id
         if quantity is not None:
             payload["quantity"] = quantity
+        if cancel_at is not None:
+            payload["cancel_at"] = cancel_at
         response = requestor.request("post", "/api/v2/subscription/update", payload)
         self.refresh_from(response)
         return self

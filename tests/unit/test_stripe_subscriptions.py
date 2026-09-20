@@ -209,3 +209,34 @@ def test_update_subscription_full(mock_api_requestor, stripe_subscription):
             "correlation_id": "corr-999",
         },
     )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_update_subscription_schedules_cancel_at(mock_api_requestor, stripe_subscription):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "sub_abc", "status": "active", "cancel_at": 1700000000}
+
+    stripe_subscription.update_subscription("sub_abc", cancel_at=1700000000, correlation_id="corr-999")
+
+    mock_instance.request.assert_called_once_with(
+        "post",
+        "/api/v2/subscription/update",
+        {
+            "subscription_id": "sub_abc",
+            "cancel": False,
+            "correlation_id": "corr-999",
+            "cancel_at": 1700000000,
+        },
+    )
+
+
+@patch("sendhub.stripe_subscriptions.APIRequestor")
+def test_update_subscription_cancel_true_omits_cancel_at_when_unset(mock_api_requestor, stripe_subscription):
+    """cancel=True (immediate) is the common case that must not send a stray cancel_at key."""
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"id": "sub_abc", "status": "canceled"}
+
+    stripe_subscription.update_subscription("sub_abc", cancel=True)
+
+    _, _, payload = mock_instance.request.call_args[0]
+    assert "cancel_at" not in payload
