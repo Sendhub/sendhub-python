@@ -1,12 +1,14 @@
 import datetime
 import json
 import platform
+import socket
 import textwrap
 import urllib.parse
 from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
+from urllib3.connection import HTTPConnection
 
 from sendhub import constants as _constants
 from sendhub.constants import (
@@ -33,8 +35,28 @@ from sendhub.version import VERSION
 # Module-level Session shared across all APIRequestor calls.  Reuses TCP
 # connections to the entitlements and billing services instead of opening a
 # new socket on every request.
+#
+# TCP keep-alive probes stop NAT/firewall/LB state from silently dropping idle
+# pooled sockets, which otherwise surface as "RemoteDisconnected" on reuse.
+_KEEPALIVE_SOCKET_OPTIONS = HTTPConnection.default_socket_options + [
+    (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+]
+if hasattr(socket, "TCP_KEEPIDLE"):
+    _KEEPALIVE_SOCKET_OPTIONS += [
+        (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
+        (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
+        (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
+    ]
+
+
+class _KeepAliveAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs["socket_options"] = _KEEPALIVE_SOCKET_OPTIONS
+        super().init_poolmanager(*args, **kwargs)
+
+
 _session = requests.Session()
-_adapter = HTTPAdapter(pool_connections=4, pool_maxsize=10, max_retries=2)
+_adapter = _KeepAliveAdapter(pool_connections=4, pool_maxsize=10, max_retries=2)
 _session.mount("http://", _adapter)
 _session.mount("https://", _adapter)
 
