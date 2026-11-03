@@ -420,6 +420,13 @@ class BillingAccount(APIResource):
             f"{self.instance_url(str(enterprise_id))}/entitlements/adjust",
         )
 
+    def get_entitlement_adjustment_defaults(self, enterprise_id):
+        """Defaults for a new entitlement adjustment: ``{"default_expires_at": <iso>}`` (next usage reset)."""
+        return self._billing_request(
+            "get",
+            f"{self.instance_url(str(enterprise_id))}/entitlements/adjust/defaults",
+        )
+
     def grant_entitlement_adjustment(self, enterprise_id, data):
         """Grant an entitlement adjustment for the given enterprise."""
         return self._billing_request(

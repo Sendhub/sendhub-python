@@ -492,6 +492,21 @@ def test_list_entitlement_adjustments(mock_api_requestor, real_billing_account):
 
 
 @patch("sendhub.billing_accounts.APIRequestor")
+def test_get_entitlement_adjustment_defaults(mock_api_requestor, real_billing_account):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"default_expires_at": "2026-11-15T07:00:00+00:00"}
+
+    result = real_billing_account.get_entitlement_adjustment_defaults(12)
+
+    assert result == {"default_expires_at": "2026-11-15T07:00:00+00:00"}
+    mock_instance.request.assert_called_once_with(
+        "get",
+        "/api/v2/accounts/12/entitlements/adjust/defaults",
+        None,
+    )
+
+
+@patch("sendhub.billing_accounts.APIRequestor")
 def test_grant_entitlement_adjustment(mock_api_requestor, real_billing_account):
     mock_instance = mock_api_requestor.return_value
     mock_instance.request.return_value = {"id": 1}

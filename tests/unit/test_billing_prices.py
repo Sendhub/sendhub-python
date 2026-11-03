@@ -127,3 +127,15 @@ def test_list_prices_cached_passes_filters(mock_api_requestor, billing_prices):
     billing_prices.list_prices_cached(with_hidden=False, active_status="active")
     call_kwargs = mock_instance.request.call_args[1]
     assert call_kwargs["params"] == {"with_hidden": "0", "active_status": "active"}
+
+
+@patch("sendhub.billing_prices.APIRequestor")
+def test_get_price_usage(mock_api_requestor):
+    mock_instance = mock_api_requestor.return_value
+    mock_instance.request.return_value = {"1045": {"account_count": 2, "live_subscription_count": 1}}
+
+    result = BillingPrices().get_price_usage()
+
+    assert result == {"1045": {"account_count": 2, "live_subscription_count": 1}}
+    assert mock_instance.api_base == BillingPrices.get_base_url()
+    mock_instance.request.assert_called_once_with("get", "/api/v2/prices/usage")

@@ -135,6 +135,18 @@ class BillingPrices(APIResource):
                 f"Failed to delete price with price_id={price_id}: {exc}"
             ) from exc
 
+    def get_price_usage(self) -> dict:
+        """
+        Accounts and live subscriptions per price (GET /api/v2/prices/usage/).
+
+        Returns:
+            dict: ``{price_id: {"account_count": int, "live_subscription_count": int}}``;
+            prices with neither are left out.
+        """
+        requestor = APIRequestor()
+        requestor.api_base = self.get_base_url()
+        return requestor.request("get", f"{self.class_url()}/usage")
+
     def set_price_owner(self, price_id: str, user_id: int, acting_user_id: int) -> dict:
         """
         Sets billing's owner_user_id for a price (PUT /api/v2/prices/{id}/ownership/).
